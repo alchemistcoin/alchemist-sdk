@@ -4,7 +4,7 @@ This is a clone of the Uniswap SDK. Alchemist-specific development happens on th
 
 For now, we don't publish this as a npm module and instead import it from github. This means that we have no "npm publish" step where we can build `dist/`. So unlike in upstream, we commit `dist/` into the repo. If/when we turn this into a module, `dist/` can go away.
 
-
+**tldr; all PRs should include the changes resulting from running `yarn build`.**
 
 
 # Uniswap SDK
