@@ -1,3 +1,12 @@
+# Alchemist Notes
+
+This is a clone of the Uniswap SDK. Alchemist-specific development happens on the `dev` branch, which is branched off from main at a88048e9c4198a5bdaea00883ca00c8c8e582605 (same commit [upstream](https://github.com/Uniswap/uniswap-v2-sdk/commits/a88048e9c4198a5bdaea00883ca00c8c8e582605)). We branched of from that commit because it corresponds to the version imported by [mistx-frontend](https://github.com/alchemistcoin/mistx-frontend).
+
+For now, we don't publish this as a npm module and instead import it from github. This means that we have no "npm publish" step where we can build `dist/`. So unlike in upstream, we commit `dist/` into the repo. If/when we turn this into a module, `dist/` can go away.
+
+
+
+
 # Uniswap SDK
 
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
