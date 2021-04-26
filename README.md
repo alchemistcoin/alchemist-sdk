@@ -1,4 +1,4 @@
-# Alchemist Notes
+# ⚗ Alchemist Notes ⚗
 
 This is a clone of the Uniswap SDK. Alchemist-specific development happens on the `dev` branch, which is branched off from main at a88048e9c4198a5bdaea00883ca00c8c8e582605 (same commit [upstream](https://github.com/Uniswap/uniswap-v2-sdk/commits/a88048e9c4198a5bdaea00883ca00c8c8e582605)). We branched of from that commit because it corresponds to the version imported by [mistx-frontend](https://github.com/alchemistcoin/mistx-frontend).
 
