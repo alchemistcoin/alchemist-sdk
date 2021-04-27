@@ -1,7 +1,6 @@
 import JSBI from 'jsbi';
 export { default as JSBI } from 'jsbi';
 import invariant from 'tiny-invariant';
-import warning from 'tiny-warning';
 import { getAddress, getCreate2Address } from '@ethersproject/address';
 import _Big from 'big.js';
 import toFormat from 'toformat';
@@ -284,8 +283,9 @@ function validateSolidityTypeInstance(value, solidityType) {
 
 function validateAndParseAddress(address) {
   try {
-    var checksummedAddress = getAddress(address);
-    process.env.NODE_ENV !== "production" ? warning(address === checksummedAddress, address + " is not checksummed.") : void 0;
+    var checksummedAddress = getAddress(address); // this needs to be uncommented before prod MVP
+    // warning(address === checksummedAddress, `${address} is not checksummed.`)
+
     return checksummedAddress;
   } catch (error) {
      process.env.NODE_ENV !== "production" ? invariant(false, address + " is not a valid address.") : invariant(false) ;
