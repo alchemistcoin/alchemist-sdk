@@ -257,6 +257,7 @@ export class Trade {
     originalAmountIn: CurrencyAmount = currencyAmountIn,
     bestTrades: Trade[] = []
   ): Trade[] {
+    console.log('best trade exact in')
     invariant(pairs.length > 0, 'PAIRS')
     invariant(maxHops > 0, 'MAX_HOPS')
     invariant(originalAmountIn === currencyAmountIn || currentPairs.length > 0, 'INVALID_RECURSION')
@@ -270,6 +271,10 @@ export class Trade {
 
     const amountIn = wrappedAmount(currencyAmountIn, chainId)
     const tokenOut = wrappedCurrency(currencyOut, chainId)
+    const etherIn = amountIn.currency === ETHER
+    const etherOut = tokenOut === ETHER
+    console.log('etherIn', etherIn)
+    console.log('etherOut', etherOut)
     for (let i = 0; i < pairs.length; i++) {
       const pair = pairs[i]
       // pair irrelevant
