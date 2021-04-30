@@ -49,3 +49,12 @@ export const SOLIDITY_TYPE_MAXIMA = {
   [SolidityType.uint8]: JSBI.BigInt('0xff'),
   [SolidityType.uint256]: JSBI.BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
 }
+
+export const GAS_ESTIMATES: {[ methodName: string ]: BigintIsh} = {
+  swapETHForExactTokens: '174552',
+  swapExactETHForTokens: '161308',
+  swapExactTokensForETH: '146035',
+  swapExactTokensForTokens: '143216',
+  swapTokensForExactETH: '189218',
+  swapTokensForExactTokens: '185118'
+}

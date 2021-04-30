@@ -3,7 +3,7 @@ import invariant from 'tiny-invariant'
 import JSBI from 'jsbi'
 import { getAddress } from '@ethersproject/address'
 
-import { BigintIsh, ZERO, ONE, TWO, THREE, SolidityType, SOLIDITY_TYPE_MAXIMA } from './constants'
+import { BigintIsh, ZERO, ONE, TWO, THREE, SolidityType, SOLIDITY_TYPE_MAXIMA, GAS_ESTIMATES } from './constants'
 
 export function validateSolidityTypeInstance(value: JSBI, solidityType: SolidityType): void {
   invariant(JSBI.greaterThanOrEqual(value, ZERO), `${value} is not a ${solidityType}.`)
@@ -28,6 +28,28 @@ export function parseBigintIsh(bigintIsh: BigintIsh): JSBI {
     : typeof bigintIsh === 'bigint'
     ? JSBI.BigInt(bigintIsh.toString())
     : JSBI.BigInt(bigintIsh)
+}
+
+export function estimatedGasForMethod(methodName: string = 'swapTokensForExactETH', numHops: BigintIsh = '1'): JSBI {
+  const gasBeforeHopFactor: BigintIsh = parseBigintIsh(GAS_ESTIMATES[methodName])
+  const factor = parseBigintIsh('0')
+  const additionalGas = JSBI.multiply(parseBigintIsh(numHops),factor)
+  return JSBI.add(gasBeforeHopFactor,additionalGas)
+}
+
+export function calculateMinerBribe(gasPriceToBeat: BigintIsh, estimatedGas: BigintIsh, margin: BigintIsh): JSBI {
+  gasPriceToBeat = parseBigintIsh(gasPriceToBeat)
+  estimatedGas = parseBigintIsh(estimatedGas)
+  const gasPriceToBeatWithMargin = calculateMargin(gasPriceToBeat, margin)
+  return JSBI.multiply(gasPriceToBeatWithMargin, estimatedGas)
+}
+
+// add x%
+export function calculateMargin(value: BigintIsh, margin: BigintIsh): JSBI {
+  value = parseBigintIsh(value)
+  const numerator = JSBI.multiply(value, JSBI.add(parseBigintIsh('10000'),parseBigintIsh('1000')))
+  const denominator = JSBI.multiply(parseBigintIsh(margin), parseBigintIsh('1000'))
+  return JSBI.divide(numerator,denominator)
 }
 
 // mock the on-chain sqrt function
