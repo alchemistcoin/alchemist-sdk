@@ -178,16 +178,16 @@ export class Trade {
 
       for (let i = 0; i < route.path.length - 1; i++) {
         const pair = route.pairs[i]
-        let iAmount = amounts[i]
+        let inputAmount = amounts[i]
         // if the input is ETH, calculate the output amount with the
         // the input reduced by the minerBribe
         if (etherIn && i === 0){
-          const modifiedAmount = iAmount.subtract(wrappedAmount(this.minerBribe, route.chainId))
-          console.log('original amount in', iAmount.toExact())
+          const modifiedAmount = inputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId))
+          console.log('original amount in', inputAmount.toExact())
           console.log('modified amount in', modifiedAmount.toExact())
-          iAmount = modifiedAmount
+          inputAmount = modifiedAmount
         }
-        const [outputAmount, nextPair] = pair.getOutputAmount(iAmount)
+        const [outputAmount, nextPair] = pair.getOutputAmount(inputAmount)
 
         // if the output is ETH, reduce the output amount
         // by the miner bribe
@@ -207,17 +207,17 @@ export class Trade {
       invariant(currencyEquals(amount.currency, route.output), 'OUTPUT')
       amounts[amounts.length - 1] = wrappedAmount(amount, route.chainId)
       for (let i = route.path.length - 1; i > 0; i--) {
-        let iAmount = amounts[i]
+        let outputAmount = amounts[i]
         // if the output is ETH, calculate the input amount with the
         // the output increased by the minerBribe
         if (etherOut && i === route.path.length - 1){
-          const modifiedAmount = iAmount.add(wrappedAmount(this.minerBribe, route.chainId))
-          console.log('original amount out', iAmount.toExact())
+          const modifiedAmount = outputAmount.add(wrappedAmount(this.minerBribe, route.chainId))
+          console.log('original amount out', outputAmount.toExact())
           console.log('modified amount out', modifiedAmount.toExact())
-          iAmount = modifiedAmount
+          outputAmount = modifiedAmount
         }
         const pair = route.pairs[i - 1]
-        const [inputAmount, nextPair] = pair.getInputAmount(iAmount)
+        const [inputAmount, nextPair] = pair.getInputAmount(outputAmount)
         // if the input is ETH, increase the input amount
         // by the miner bribe
         if (etherIn && i === 1){
