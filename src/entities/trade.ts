@@ -120,11 +120,14 @@ export class Trade {
    * The output amount for the trade assuming no slippage.
    */
   public readonly outputAmount: CurrencyAmount
-  
   /**
    * The bribe amount needed to execute the trade
    */
   public readonly minerBribe: CurrencyAmount
+  /**
+   * The estimated gas used for the trade
+   */
+  public readonly estimatedGas: BigintIsh
   /**
    * The price expressed in terms of output amount/input amount.
    */
@@ -165,6 +168,7 @@ export class Trade {
     const estimatedGas = estimatedGasForMethod(methodName, (route.path.length-1).toString())
     const minerBribe = calculateMinerBribe(gasPriceToBeat, estimatedGas, minerBribeMargin)
     
+    this.estimatedGas = estimatedGas.toString()
     this.minerBribe = CurrencyAmount.ether(minerBribe)
 
     if (tradeType === TradeType.EXACT_INPUT) {
@@ -258,6 +262,8 @@ export class Trade {
     console.log('executionPrice', this.executionPrice.toSignificant(6))
     console.log('nextMidPrice', this.nextMidPrice.toSignificant(6))
     console.log('priceImpact', this.priceImpact.toSignificant(6))
+    console.log('minerBribe', this.minerBribe.toSignificant(6))
+    console.log('estimatedGas', this.estimatedGas)
     console.log('******************')
     console.log('*** TRADE END **')
     console.log('******************')
