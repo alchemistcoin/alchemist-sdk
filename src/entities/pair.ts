@@ -7,6 +7,9 @@ import { getCreate2Address } from '@ethersproject/address'
 
 import {
   BigintIsh,
+  Exchange,
+  SUSHI_FACTORY_ADDRESS,
+  SUSHI_INIT_CODE_HASH,
   FACTORY_ADDRESS,
   INIT_CODE_HASH,
   MINIMUM_LIQUIDITY,
@@ -24,10 +27,11 @@ import { Token } from './token'
 let PAIR_ADDRESS_CACHE: { [token0Address: string]: { [token1Address: string]: string } } = {}
 
 export class Pair {
+  public readonly exchange?: Exchange
   public readonly liquidityToken: Token
   private readonly tokenAmounts: [TokenAmount, TokenAmount]
 
-  public static getAddress(tokenA: Token, tokenB: Token): string {
+  public static getAddress(tokenA: Token, tokenB: Token, exchange?: Exchange): string {
     const tokens = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA] // does safety checks
 
     if (PAIR_ADDRESS_CACHE?.[tokens[0].address]?.[tokens[1].address] === undefined) {
@@ -36,9 +40,9 @@ export class Pair {
         [tokens[0].address]: {
           ...PAIR_ADDRESS_CACHE?.[tokens[0].address],
           [tokens[1].address]: getCreate2Address(
-            FACTORY_ADDRESS,
+            exchange ? (exchange == Exchange.SUSHI ? SUSHI_FACTORY_ADDRESS : FACTORY_ADDRESS) : FACTORY_ADDRESS,
             keccak256(['bytes'], [pack(['address', 'address'], [tokens[0].address, tokens[1].address])]),
-            INIT_CODE_HASH
+            exchange ? (exchange == Exchange.SUSHI ? SUSHI_INIT_CODE_HASH : INIT_CODE_HASH) : INIT_CODE_HASH
           )
         }
       }
@@ -47,7 +51,7 @@ export class Pair {
     return PAIR_ADDRESS_CACHE[tokens[0].address][tokens[1].address]
   }
 
-  public constructor(tokenAmountA: TokenAmount, tokenAmountB: TokenAmount) {
+  public constructor(tokenAmountA: TokenAmount, tokenAmountB: TokenAmount, exchange?: Exchange) {
     const tokenAmounts = tokenAmountA.token.sortsBefore(tokenAmountB.token) // does safety checks
       ? [tokenAmountA, tokenAmountB]
       : [tokenAmountB, tokenAmountA]
@@ -59,6 +63,7 @@ export class Pair {
       'Uniswap V2'
     )
     this.tokenAmounts = tokenAmounts as [TokenAmount, TokenAmount]
+    this.exchange = exchange
   }
 
   /**
