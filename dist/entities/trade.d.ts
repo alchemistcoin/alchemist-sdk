@@ -37,6 +37,10 @@ export declare class Trade {
      */
     readonly outputAmount: CurrencyAmount;
     /**
+     * The bribe amount needed to execute the trade
+     */
+    readonly minerBribe: CurrencyAmount;
+    /**
      * The price expressed in terms of output amount/input amount.
      */
     readonly executionPrice: Price;
@@ -87,7 +91,7 @@ export declare class Trade {
      * @param gasPriceToBeat used to calculate the miner bribe
      * @param minerBribeMargin used as the margin for the miner bribe calculation
      */
-    static bestTradeExactIn(pairs: Pair[], currencyAmountIn: CurrencyAmount, currencyOut: Currency, { maxNumResults, maxHops }: BestTradeOptions | undefined, currentPairs: Pair[] | undefined, originalAmountIn: CurrencyAmount | undefined, bestTrades: Trade[] | undefined, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh): Trade[];
+    static bestTradeExactIn(pairs: Pair[], currencyAmountIn: CurrencyAmount, currencyOut: Currency, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh, { maxNumResults, maxHops }?: BestTradeOptions, currentPairs?: Pair[], originalAmountIn?: CurrencyAmount, bestTrades?: Trade[]): Trade[];
     /**
      * similar to the above method but instead targets a fixed output amount
      * given a list of pairs, and a fixed amount out, returns the top `maxNumResults` trades that go from an input token
@@ -105,7 +109,7 @@ export declare class Trade {
      * @param gasPriceToBeat used to calculate the miner bribe
      * @param minerBribeMargin used as the margin for the miner bribe calculation
      */
-    static bestTradeExactOut(pairs: Pair[], currencyIn: Currency, currencyAmountOut: CurrencyAmount, { maxNumResults, maxHops }: BestTradeOptions | undefined, currentPairs: Pair[] | undefined, originalAmountOut: CurrencyAmount | undefined, bestTrades: Trade[] | undefined, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh): Trade[];
+    static bestTradeExactOut(pairs: Pair[], currencyIn: Currency, currencyAmountOut: CurrencyAmount, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh, { maxNumResults, maxHops }?: BestTradeOptions, currentPairs?: Pair[], originalAmountOut?: CurrencyAmount, bestTrades?: Trade[]): Trade[];
     /**
      * return the mistX router method name for the trade
      * @param tradeType the type of trade, TradeType

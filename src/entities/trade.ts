@@ -120,6 +120,11 @@ export class Trade {
    * The output amount for the trade assuming no slippage.
    */
   public readonly outputAmount: CurrencyAmount
+  
+  /**
+   * The bribe amount needed to execute the trade
+   */
+  public readonly minerBribe: CurrencyAmount
   /**
    * The price expressed in terms of output amount/input amount.
    */
@@ -156,52 +161,71 @@ export class Trade {
     const nextPairs: Pair[] = new Array(route.pairs.length)
     const etherIn = route.input === ETHER
     const etherOut = route.output === ETHER
-    const methodName = Trade.methodNameForTradeType(tradeType, etherIn, etherOut, tradeType === TradeType.EXACT_OUTPUT)
+    const methodName = Trade.methodNameForTradeType(tradeType, etherIn, etherOut)
     const estimatedGas = estimatedGasForMethod(methodName, (route.path.length-1).toString())
     const minerBribe = calculateMinerBribe(gasPriceToBeat, estimatedGas, minerBribeMargin)
     
-    
+    this.minerBribe = CurrencyAmount.ether(minerBribe)
+
     if (tradeType === TradeType.EXACT_INPUT) {
       invariant(currencyEquals(amount.currency, route.input), 'INPUT')
 
       amounts[0] = wrappedAmount(amount, route.chainId)
-      
-      
-      
+
       for (let i = 0; i < route.path.length - 1; i++) {
         const pair = route.pairs[i]
         let iAmount = amounts[i]
         // if the input is ETH, calculate the output amount with the
         // the input reduced by the minerBribe
         if (etherIn && i === 0){
-          iAmount = wrappedAmount(amount.subtract(CurrencyAmount.ether(minerBribe)), route.chainId)
+          const modifiedAmount = iAmount.subtract(wrappedAmount(this.minerBribe, route.chainId))
+          console.log('original amount in', iAmount.toExact())
+          console.log('modified amount in', modifiedAmount.toExact())
+          iAmount = modifiedAmount
         }
         const [outputAmount, nextPair] = pair.getOutputAmount(iAmount)
+
         // if the output is ETH, reduce the output amount
         // by the miner bribe
-        // if (etherOut && i === route.path.length - 1){
-        //   amounts[i + 1] = 
-        // } else {
-        //   amounts[i + 1] = outputAmount
-        // }
-        console.log('output amount', outputAmount)
-        amounts[i + 1] = outputAmount
+        if (etherOut && i === route.path.length - 2){
+          const modifiedAmount = outputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId))
+          console.log('original amount out', outputAmount.toExact())
+          console.log('modified amount out', modifiedAmount.toExact())
+          amounts[i + 1] = modifiedAmount
+        } else {
+          amounts[i + 1] = outputAmount
+        }
         nextPairs[i] = nextPair
       }
     } else {
-      // if the output is ETH, calculate the input amount with the
-      // the output reduced by the minerBribe
+      
 
       invariant(currencyEquals(amount.currency, route.output), 'OUTPUT')
       amounts[amounts.length - 1] = wrappedAmount(amount, route.chainId)
       for (let i = route.path.length - 1; i > 0; i--) {
+        let iAmount = amounts[i]
+        // if the output is ETH, calculate the input amount with the
+        // the output increased by the minerBribe
+        if (etherOut && i === route.path.length - 1){
+          const modifiedAmount = iAmount.add(wrappedAmount(this.minerBribe, route.chainId))
+          console.log('original amount out', iAmount.toExact())
+          console.log('modified amount out', modifiedAmount.toExact())
+          iAmount = modifiedAmount
+        }
         const pair = route.pairs[i - 1]
-        const [inputAmount, nextPair] = pair.getInputAmount(amounts[i])
-        amounts[i - 1] = inputAmount
+        const [inputAmount, nextPair] = pair.getInputAmount(iAmount)
+        // if the input is ETH, increase the input amount
+        // by the miner bribe
+        if (etherIn && i === 1){
+          const modifiedAmount = inputAmount.add(wrappedAmount(this.minerBribe, route.chainId))
+          console.log('original amount in', inputAmount.toExact())
+          console.log('modified amount in', modifiedAmount.toExact())
+          amounts[i - 1] = modifiedAmount
+        } else {
+          amounts[i - 1] = inputAmount
+        }
         nextPairs[i - 1] = nextPair
       }
-      // if the input is ETH, reduce the input amount
-      // by the miner bribe
     }
     this.route = route
     this.tradeType = tradeType
@@ -225,6 +249,18 @@ export class Trade {
     )
     this.nextMidPrice = Price.fromRoute(new Route(nextPairs, route.input))
     this.priceImpact = computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount)
+    
+    console.log('******************')
+    console.log('*** TRADE START **')
+    console.log('******************')
+    console.log('inputAmount', this.inputAmount.toSignificant(6))
+    console.log('outputAmount', this.outputAmount.toSignificant(6))
+    console.log('executionPrice', this.executionPrice.toSignificant(6))
+    console.log('nextMidPrice', this.nextMidPrice.toSignificant(6))
+    console.log('priceImpact', this.priceImpact.toSignificant(6))
+    console.log('******************')
+    console.log('*** TRADE END **')
+    console.log('******************')
   }
 
   /**

@@ -32,7 +32,7 @@ export function parseBigintIsh(bigintIsh: BigintIsh): JSBI {
 
 export function estimatedGasForMethod(methodName: string = 'swapTokensForExactETH', numHops: BigintIsh = '1'): JSBI {
   const gasBeforeHopFactor: BigintIsh = parseBigintIsh(GAS_ESTIMATES[methodName])
-  const factor = parseBigintIsh('0')
+  const factor = parseBigintIsh('0') // TODO: change this
   const additionalGas = JSBI.multiply(parseBigintIsh(numHops),factor)
   return JSBI.add(gasBeforeHopFactor,additionalGas)
 }
@@ -47,8 +47,9 @@ export function calculateMinerBribe(gasPriceToBeat: BigintIsh, estimatedGas: Big
 // add x%
 export function calculateMargin(value: BigintIsh, margin: BigintIsh): JSBI {
   value = parseBigintIsh(value)
-  const numerator = JSBI.multiply(value, JSBI.add(parseBigintIsh('10000'),parseBigintIsh('1000')))
-  const denominator = JSBI.multiply(parseBigintIsh(margin), parseBigintIsh('1000'))
+  margin = JSBI.multiply(parseBigintIsh(margin), parseBigintIsh('100'))
+  const numerator = JSBI.multiply(value, JSBI.add(parseBigintIsh('10000'), margin))
+  const denominator = parseBigintIsh('10000')
   return JSBI.divide(numerator,denominator)
 }
 
