@@ -182,6 +182,7 @@ export class Trade {
         // if the input is ETH, calculate the output amount with the
         // the input reduced by the minerBribe
         if (etherIn && i === 0){
+          // reduce the inputAmount by this.minerBribe
           const modifiedAmount = inputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId))
           console.log('original amount in', inputAmount.toExact())
           console.log('modified amount in', modifiedAmount.toExact())
@@ -192,6 +193,7 @@ export class Trade {
         // if the output is ETH, reduce the output amount
         // by the miner bribe
         if (etherOut && i === route.path.length - 2){
+          // reduce the outputAmount by this.minerBribe
           const modifiedAmount = outputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId))
           console.log('original amount out', outputAmount.toExact())
           console.log('modified amount out', modifiedAmount.toExact())
@@ -211,6 +213,7 @@ export class Trade {
         // if the output is ETH, calculate the input amount with the
         // the output increased by the minerBribe
         if (etherOut && i === route.path.length - 1){
+          // increase the outputAmount by this.minerBribe
           const modifiedAmount = outputAmount.add(wrappedAmount(this.minerBribe, route.chainId))
           console.log('original amount out', outputAmount.toExact())
           console.log('modified amount out', modifiedAmount.toExact())
@@ -221,6 +224,7 @@ export class Trade {
         // if the input is ETH, increase the input amount
         // by the miner bribe
         if (etherIn && i === 1){
+          // increase the input amount by this.minerBribe
           const modifiedAmount = inputAmount.add(wrappedAmount(this.minerBribe, route.chainId))
           console.log('original amount in', inputAmount.toExact())
           console.log('modified amount in', modifiedAmount.toExact())
