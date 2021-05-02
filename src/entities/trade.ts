@@ -1,6 +1,6 @@
 import invariant from 'tiny-invariant'
 
-import { ChainId, ONE, TradeType, ZERO } from '../constants'
+import { ChainId, Exchange, ONE, TradeType, ZERO } from '../constants'
 import { sortedInsert } from '../utils'
 import { Currency, ETHER } from './currency'
 import { CurrencyAmount } from './fractions/currencyAmount'
@@ -138,8 +138,8 @@ export class Trade {
    * @param route route of the exact in trade
    * @param amountIn the amount being passed in
    */
-  public static exactIn(route: Route, amountIn: CurrencyAmount): Trade {
-    return new Trade(route, amountIn, TradeType.EXACT_INPUT)
+  public static exactIn(route: Route, amountIn: CurrencyAmount, exchange: Exchange): Trade {
+    return new Trade(route, amountIn, TradeType.EXACT_INPUT, exchange)
   }
 
   /**
@@ -147,11 +147,11 @@ export class Trade {
    * @param route route of the exact out trade
    * @param amountOut the amount returned by the trade
    */
-  public static exactOut(route: Route, amountOut: CurrencyAmount): Trade {
-    return new Trade(route, amountOut, TradeType.EXACT_OUTPUT)
+  public static exactOut(route: Route, amountOut: CurrencyAmount, exchange : Exchange): Trade {
+    return new Trade(route, amountOut, TradeType.EXACT_OUTPUT, exchange)
   }
 
-  public constructor(route: Route, amount: CurrencyAmount, tradeType: TradeType) {
+  public constructor(route: Route, amount: CurrencyAmount, tradeType: TradeType, exchange : Exchange) {
     const amounts: TokenAmount[] = new Array(route.path.length)
     const nextPairs: Pair[] = new Array(route.pairs.length)
     if (tradeType === TradeType.EXACT_INPUT) {
@@ -159,7 +159,7 @@ export class Trade {
       amounts[0] = wrappedAmount(amount, route.chainId)
       for (let i = 0; i < route.path.length - 1; i++) {
         const pair = route.pairs[i]
-        const [outputAmount, nextPair] = pair.getOutputAmount(amounts[i])
+        const [outputAmount, nextPair] = pair.getOutputAmount(amounts[i], exchange)
         amounts[i + 1] = outputAmount
         nextPairs[i] = nextPair
       }
@@ -168,7 +168,7 @@ export class Trade {
       amounts[amounts.length - 1] = wrappedAmount(amount, route.chainId)
       for (let i = route.path.length - 1; i > 0; i--) {
         const pair = route.pairs[i - 1]
-        const [inputAmount, nextPair] = pair.getInputAmount(amounts[i])
+        const [inputAmount, nextPair] = pair.getInputAmount(amounts[i], exchange)
         amounts[i - 1] = inputAmount
         nextPairs[i - 1] = nextPair
       }
@@ -255,7 +255,8 @@ export class Trade {
     // used in recursion.
     currentPairs: Pair[] = [],
     originalAmountIn: CurrencyAmount = currencyAmountIn,
-    bestTrades: Trade[] = []
+    bestTrades: Trade[] = [],
+    exchange : Exchange
   ): Trade[] {
     invariant(pairs.length > 0, 'PAIRS')
     invariant(maxHops > 0, 'MAX_HOPS')
@@ -278,7 +279,7 @@ export class Trade {
 
       let amountOut: TokenAmount
       try {
-        ;[amountOut] = pair.getOutputAmount(amountIn)
+        ;[amountOut] = pair.getOutputAmount(amountIn, exchange)
       } catch (error) {
         // input too low
         if (error.isInsufficientInputAmountError) {
@@ -293,7 +294,8 @@ export class Trade {
           new Trade(
             new Route([...currentPairs, pair], originalAmountIn.currency, currencyOut),
             originalAmountIn,
-            TradeType.EXACT_INPUT
+            TradeType.EXACT_INPUT,
+            exchange
           ),
           maxNumResults,
           tradeComparator
@@ -312,7 +314,8 @@ export class Trade {
           },
           [...currentPairs, pair],
           originalAmountIn,
-          bestTrades
+          bestTrades,
+          exchange
         )
       }
     }
@@ -343,7 +346,8 @@ export class Trade {
     // used in recursion.
     currentPairs: Pair[] = [],
     originalAmountOut: CurrencyAmount = currencyAmountOut,
-    bestTrades: Trade[] = []
+    bestTrades: Trade[] = [],
+    exchange : Exchange
   ): Trade[] {
     invariant(pairs.length > 0, 'PAIRS')
     invariant(maxHops > 0, 'MAX_HOPS')
@@ -366,7 +370,7 @@ export class Trade {
 
       let amountIn: TokenAmount
       try {
-        ;[amountIn] = pair.getInputAmount(amountOut)
+        ;[amountIn] = pair.getInputAmount(amountOut, exchange)
       } catch (error) {
         // not enough liquidity in this pair
         if (error.isInsufficientReservesError) {
@@ -381,7 +385,8 @@ export class Trade {
           new Trade(
             new Route([pair, ...currentPairs], currencyIn, originalAmountOut.currency),
             originalAmountOut,
-            TradeType.EXACT_OUTPUT
+            TradeType.EXACT_OUTPUT,
+            exchange
           ),
           maxNumResults,
           tradeComparator
@@ -400,7 +405,8 @@ export class Trade {
           },
           [pair, ...currentPairs],
           originalAmountOut,
-          bestTrades
+          bestTrades,
+          exchange
         )
       }
     }
