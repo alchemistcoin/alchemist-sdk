@@ -774,7 +774,6 @@ var Pair = /*#__PURE__*/function () {
   function Pair(tokenAmountA, tokenAmountB, exchange) {
     var tokenAmounts = tokenAmountA.token.sortsBefore(tokenAmountB.token) // does safety checks
     ? [tokenAmountA, tokenAmountB] : [tokenAmountB, tokenAmountA];
-    console.log('New Token: ' + tokenAmounts[0].token.address + ' pair address: ' + Pair.getAddress(tokenAmounts[0].token, tokenAmounts[1].token, exchange) + ' ex: ' + exchange);
     this.liquidityToken = new Token(tokenAmounts[0].token.chainId, Pair.getAddress(tokenAmounts[0].token, tokenAmounts[1].token, exchange), 18, 'UNI-V2', 'Uniswap V2');
     this.tokenAmounts = tokenAmounts;
     this.exchange = exchange;
