@@ -8,8 +8,6 @@ import { getCreate2Address } from '@ethersproject/address'
 import {
   BigintIsh,
   Exchange,
-  SUSHI_FACTORY_ADDRESS,
-  SUSHI_INIT_CODE_HASH,
   FACTORY_ADDRESS,
   INIT_CODE_HASH,
   MINIMUM_LIQUIDITY,
@@ -40,9 +38,9 @@ export class Pair {
         [tokens[0].address+exchangeIdentifier]: {
           ...PAIR_ADDRESS_CACHE?.[tokens[0].address+exchangeIdentifier],
           [tokens[1].address]: getCreate2Address(
-            (exchange == Exchange.SUSHI) ? SUSHI_FACTORY_ADDRESS : FACTORY_ADDRESS,
+            FACTORY_ADDRESS[exchange],
             keccak256(['bytes'], [pack(['address', 'address'], [tokens[0].address, tokens[1].address])]),
-            (exchange == Exchange.SUSHI) ? SUSHI_INIT_CODE_HASH : INIT_CODE_HASH
+            INIT_CODE_HASH[exchange]
           )
         }
       }

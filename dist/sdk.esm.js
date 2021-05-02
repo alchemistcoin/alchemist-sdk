@@ -11,7 +11,7 @@ import { getNetwork } from '@ethersproject/networks';
 import { getDefaultProvider } from '@ethersproject/providers';
 import IUniswapV2Pair from '@uniswap/v2-core/build/IUniswapV2Pair.json';
 
-var _SOLIDITY_TYPE_MAXIMA;
+var _FACTORY_ADDRESS, _INIT_CODE_HASH, _SOLIDITY_TYPE_MAXIMA;
 var ChainId;
 
 (function (ChainId) {
@@ -44,14 +44,10 @@ var Rounding;
   Rounding[Rounding["ROUND_DOWN"] = 0] = "ROUND_DOWN";
   Rounding[Rounding["ROUND_HALF_UP"] = 1] = "ROUND_HALF_UP";
   Rounding[Rounding["ROUND_UP"] = 2] = "ROUND_UP";
-})(Rounding || (Rounding = {})); //Sushi
+})(Rounding || (Rounding = {}));
 
-
-var SUSHI_FACTORY_ADDRESS = '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac';
-var SUSHI_INIT_CODE_HASH = '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303'; //Uni
-
-var FACTORY_ADDRESS = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f';
-var INIT_CODE_HASH = '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f';
+var FACTORY_ADDRESS = (_FACTORY_ADDRESS = {}, _FACTORY_ADDRESS[Exchange.UNI] = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f', _FACTORY_ADDRESS[Exchange.SUSHI] = '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac', _FACTORY_ADDRESS[Exchange.UNDEFINED] = '0x0', _FACTORY_ADDRESS);
+var INIT_CODE_HASH = (_INIT_CODE_HASH = {}, _INIT_CODE_HASH[Exchange.UNI] = '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f', _INIT_CODE_HASH[Exchange.SUSHI] = '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303', _INIT_CODE_HASH[Exchange.UNDEFINED] = '0x0', _INIT_CODE_HASH);
 var MINIMUM_LIQUIDITY = /*#__PURE__*/JSBI.BigInt(1000); // exports for internal consumption
 
 var ZERO = /*#__PURE__*/JSBI.BigInt(0);
@@ -789,7 +785,7 @@ var Pair = /*#__PURE__*/function () {
     if (((_PAIR_ADDRESS_CACHE = PAIR_ADDRESS_CACHE) === null || _PAIR_ADDRESS_CACHE === void 0 ? void 0 : (_PAIR_ADDRESS_CACHE2 = _PAIR_ADDRESS_CACHE[tokens[0].address + exchangeIdentifier]) === null || _PAIR_ADDRESS_CACHE2 === void 0 ? void 0 : _PAIR_ADDRESS_CACHE2[tokens[1].address]) === undefined) {
       var _PAIR_ADDRESS_CACHE3, _extends2, _extends3;
 
-      PAIR_ADDRESS_CACHE = _extends({}, PAIR_ADDRESS_CACHE, (_extends3 = {}, _extends3[tokens[0].address + exchangeIdentifier] = _extends({}, (_PAIR_ADDRESS_CACHE3 = PAIR_ADDRESS_CACHE) === null || _PAIR_ADDRESS_CACHE3 === void 0 ? void 0 : _PAIR_ADDRESS_CACHE3[tokens[0].address + exchangeIdentifier], (_extends2 = {}, _extends2[tokens[1].address] = getCreate2Address(exchange == Exchange.SUSHI ? SUSHI_FACTORY_ADDRESS : FACTORY_ADDRESS, keccak256(['bytes'], [pack(['address', 'address'], [tokens[0].address, tokens[1].address])]), exchange == Exchange.SUSHI ? SUSHI_INIT_CODE_HASH : INIT_CODE_HASH), _extends2)), _extends3));
+      PAIR_ADDRESS_CACHE = _extends({}, PAIR_ADDRESS_CACHE, (_extends3 = {}, _extends3[tokens[0].address + exchangeIdentifier] = _extends({}, (_PAIR_ADDRESS_CACHE3 = PAIR_ADDRESS_CACHE) === null || _PAIR_ADDRESS_CACHE3 === void 0 ? void 0 : _PAIR_ADDRESS_CACHE3[tokens[0].address + exchangeIdentifier], (_extends2 = {}, _extends2[tokens[1].address] = getCreate2Address(FACTORY_ADDRESS[exchange], keccak256(['bytes'], [pack(['address', 'address'], [tokens[0].address, tokens[1].address])]), INIT_CODE_HASH[exchange]), _extends2)), _extends3));
     }
 
     return PAIR_ADDRESS_CACHE[tokens[0].address + exchangeIdentifier][tokens[1].address];
@@ -1588,5 +1584,5 @@ var Fetcher = /*#__PURE__*/function () {
   return Fetcher;
 }();
 
-export { ChainId, Currency, CurrencyAmount, ETHER, Exchange, FACTORY_ADDRESS, Fetcher, Fraction, INIT_CODE_HASH, InsufficientInputAmountError, InsufficientReservesError, MINIMUM_LIQUIDITY, Pair, Percent, Price, Rounding, Route, Router, SUSHI_FACTORY_ADDRESS, SUSHI_INIT_CODE_HASH, Token, TokenAmount, Trade, TradeType, WETH, currencyEquals, inputOutputComparator, tradeComparator };
+export { ChainId, Currency, CurrencyAmount, ETHER, Exchange, FACTORY_ADDRESS, Fetcher, Fraction, INIT_CODE_HASH, InsufficientInputAmountError, InsufficientReservesError, MINIMUM_LIQUIDITY, Pair, Percent, Price, Rounding, Route, Router, Token, TokenAmount, Trade, TradeType, WETH, currencyEquals, inputOutputComparator, tradeComparator };
 //# sourceMappingURL=sdk.esm.js.map

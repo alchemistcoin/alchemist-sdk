@@ -7,8 +7,6 @@ export {
   TradeType,
   Rounding,
   Exchange,
-  SUSHI_FACTORY_ADDRESS,
-  SUSHI_INIT_CODE_HASH,
   FACTORY_ADDRESS,
   INIT_CODE_HASH,
   MINIMUM_LIQUIDITY
