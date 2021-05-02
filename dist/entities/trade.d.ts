@@ -21,6 +21,10 @@ export interface BestTradeOptions {
  */
 export declare class Trade {
     /**
+     * The exchange of the trade e.g. Uni, Sushi
+     */
+    readonly exchange: Exchange;
+    /**
      * The route of the trade, i.e. which pairs the trade goes through.
      */
     readonly route: Route;
@@ -77,6 +81,7 @@ export declare class Trade {
      * Note this does not consider aggregation, as routes are linear. It's possible a better route exists by splitting
      * the amount in among multiple routes.
      * @param pairs the pairs to consider in finding the best trade
+     * @param exchange the exchange this trade will be performed on
      * @param currencyAmountIn exact amount of input currency to spend
      * @param currencyOut the desired currency out
      * @param maxNumResults maximum number of results to return
@@ -85,7 +90,7 @@ export declare class Trade {
      * @param originalAmountIn used in recursion; the original value of the currencyAmountIn parameter
      * @param bestTrades used in recursion; the current list of best trades
      */
-    static bestTradeExactIn(pairs: Pair[], currencyAmountIn: CurrencyAmount, currencyOut: Currency, { maxNumResults, maxHops }: BestTradeOptions | undefined, currentPairs: Pair[] | undefined, originalAmountIn: CurrencyAmount | undefined, bestTrades: Trade[] | undefined, exchange: Exchange): Trade[];
+    static bestTradeExactIn(pairs: Pair[], exchange: Exchange, currencyAmountIn: CurrencyAmount, currencyOut: Currency, { maxNumResults, maxHops }?: BestTradeOptions, currentPairs?: Pair[], originalAmountIn?: CurrencyAmount, bestTrades?: Trade[]): Trade[];
     /**
      * similar to the above method but instead targets a fixed output amount
      * given a list of pairs, and a fixed amount out, returns the top `maxNumResults` trades that go from an input token
@@ -93,6 +98,7 @@ export declare class Trade {
      * note this does not consider aggregation, as routes are linear. it's possible a better route exists by splitting
      * the amount in among multiple routes.
      * @param pairs the pairs to consider in finding the best trade
+     * @param exchange the exchange this trade will be performed on
      * @param currencyIn the currency to spend
      * @param currencyAmountOut the exact amount of currency out
      * @param maxNumResults maximum number of results to return
@@ -101,6 +107,6 @@ export declare class Trade {
      * @param originalAmountOut used in recursion; the original value of the currencyAmountOut parameter
      * @param bestTrades used in recursion; the current list of best trades
      */
-    static bestTradeExactOut(pairs: Pair[], currencyIn: Currency, currencyAmountOut: CurrencyAmount, { maxNumResults, maxHops }: BestTradeOptions | undefined, currentPairs: Pair[] | undefined, originalAmountOut: CurrencyAmount | undefined, bestTrades: Trade[] | undefined, exchange: Exchange): Trade[];
+    static bestTradeExactOut(pairs: Pair[], exchange: Exchange, currencyIn: Currency, currencyAmountOut: CurrencyAmount, { maxNumResults, maxHops }?: BestTradeOptions, currentPairs?: Pair[], originalAmountOut?: CurrencyAmount, bestTrades?: Trade[]): Trade[];
 }
 export {};

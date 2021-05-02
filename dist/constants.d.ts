@@ -10,7 +10,8 @@ export declare enum ChainId {
 }
 export declare enum Exchange {
     UNI = 0,
-    SUSHI = 1
+    SUSHI = 1,
+    UNDEFINED = 2
 }
 export declare enum TradeType {
     EXACT_INPUT = 0,

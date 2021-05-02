@@ -14,7 +14,8 @@ export enum ChainId {
 
 export enum Exchange {
   UNI,
-  SUSHI
+  SUSHI,
+  UNDEFINED
 }
 
 export enum TradeType {

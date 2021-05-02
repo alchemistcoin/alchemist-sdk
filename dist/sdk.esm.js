@@ -28,6 +28,7 @@ var Exchange;
 (function (Exchange) {
   Exchange[Exchange["UNI"] = 0] = "UNI";
   Exchange[Exchange["SUSHI"] = 1] = "SUSHI";
+  Exchange[Exchange["UNDEFINED"] = 2] = "UNDEFINED";
 })(Exchange || (Exchange = {}));
 
 var TradeType;
@@ -773,23 +774,26 @@ var Pair = /*#__PURE__*/function () {
   function Pair(tokenAmountA, tokenAmountB, exchange) {
     var tokenAmounts = tokenAmountA.token.sortsBefore(tokenAmountB.token) // does safety checks
     ? [tokenAmountA, tokenAmountB] : [tokenAmountB, tokenAmountA];
+    console.log('New Token: ' + tokenAmounts[0].token.address + ' pair address: ' + Pair.getAddress(tokenAmounts[0].token, tokenAmounts[1].token, exchange) + ' ex: ' + exchange);
     this.liquidityToken = new Token(tokenAmounts[0].token.chainId, Pair.getAddress(tokenAmounts[0].token, tokenAmounts[1].token, exchange), 18, 'UNI-V2', 'Uniswap V2');
     this.tokenAmounts = tokenAmounts;
     this.exchange = exchange;
   }
 
   Pair.getAddress = function getAddress(tokenA, tokenB, exchange) {
-    var _PAIR_ADDRESS_CACHE, _PAIR_ADDRESS_CACHE$t;
+    var _PAIR_ADDRESS_CACHE, _PAIR_ADDRESS_CACHE2;
 
     var tokens = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA]; // does safety checks
 
-    if (((_PAIR_ADDRESS_CACHE = PAIR_ADDRESS_CACHE) === null || _PAIR_ADDRESS_CACHE === void 0 ? void 0 : (_PAIR_ADDRESS_CACHE$t = _PAIR_ADDRESS_CACHE[tokens[0].address]) === null || _PAIR_ADDRESS_CACHE$t === void 0 ? void 0 : _PAIR_ADDRESS_CACHE$t[tokens[1].address]) === undefined) {
-      var _PAIR_ADDRESS_CACHE2, _extends2, _extends3;
+    var exchangeIdentifier = '|' + exchange;
 
-      PAIR_ADDRESS_CACHE = _extends({}, PAIR_ADDRESS_CACHE, (_extends3 = {}, _extends3[tokens[0].address] = _extends({}, (_PAIR_ADDRESS_CACHE2 = PAIR_ADDRESS_CACHE) === null || _PAIR_ADDRESS_CACHE2 === void 0 ? void 0 : _PAIR_ADDRESS_CACHE2[tokens[0].address], (_extends2 = {}, _extends2[tokens[1].address] = getCreate2Address(exchange == Exchange.SUSHI ? SUSHI_FACTORY_ADDRESS : FACTORY_ADDRESS, keccak256(['bytes'], [pack(['address', 'address'], [tokens[0].address, tokens[1].address])]), exchange == Exchange.SUSHI ? SUSHI_INIT_CODE_HASH : INIT_CODE_HASH), _extends2)), _extends3));
+    if (((_PAIR_ADDRESS_CACHE = PAIR_ADDRESS_CACHE) === null || _PAIR_ADDRESS_CACHE === void 0 ? void 0 : (_PAIR_ADDRESS_CACHE2 = _PAIR_ADDRESS_CACHE[tokens[0].address + exchangeIdentifier]) === null || _PAIR_ADDRESS_CACHE2 === void 0 ? void 0 : _PAIR_ADDRESS_CACHE2[tokens[1].address]) === undefined) {
+      var _PAIR_ADDRESS_CACHE3, _extends2, _extends3;
+
+      PAIR_ADDRESS_CACHE = _extends({}, PAIR_ADDRESS_CACHE, (_extends3 = {}, _extends3[tokens[0].address + exchangeIdentifier] = _extends({}, (_PAIR_ADDRESS_CACHE3 = PAIR_ADDRESS_CACHE) === null || _PAIR_ADDRESS_CACHE3 === void 0 ? void 0 : _PAIR_ADDRESS_CACHE3[tokens[0].address + exchangeIdentifier], (_extends2 = {}, _extends2[tokens[1].address] = getCreate2Address(exchange == Exchange.SUSHI ? SUSHI_FACTORY_ADDRESS : FACTORY_ADDRESS, keccak256(['bytes'], [pack(['address', 'address'], [tokens[0].address, tokens[1].address])]), exchange == Exchange.SUSHI ? SUSHI_INIT_CODE_HASH : INIT_CODE_HASH), _extends2)), _extends3));
     }
 
-    return PAIR_ADDRESS_CACHE[tokens[0].address][tokens[1].address];
+    return PAIR_ADDRESS_CACHE[tokens[0].address + exchangeIdentifier][tokens[1].address];
   }
   /**
    * Returns true if the token is either token0 or token1
@@ -1150,6 +1154,7 @@ var Trade = /*#__PURE__*/function () {
       }
     }
 
+    this.exchange = exchange;
     this.route = route;
     this.tradeType = tradeType;
     this.inputAmount = tradeType === TradeType.EXACT_INPUT ? amount : route.input === ETHER ? CurrencyAmount.ether(amounts[0].raw) : amounts[0];
@@ -1218,6 +1223,7 @@ var Trade = /*#__PURE__*/function () {
    * Note this does not consider aggregation, as routes are linear. It's possible a better route exists by splitting
    * the amount in among multiple routes.
    * @param pairs the pairs to consider in finding the best trade
+   * @param exchange the exchange this trade will be performed on
    * @param currencyAmountIn exact amount of input currency to spend
    * @param currencyOut the desired currency out
    * @param maxNumResults maximum number of results to return
@@ -1228,8 +1234,8 @@ var Trade = /*#__PURE__*/function () {
    */
   ;
 
-  Trade.bestTradeExactIn = function bestTradeExactIn(pairs, currencyAmountIn, currencyOut, _temp, // used in recursion.
-  currentPairs, originalAmountIn, bestTrades, exchange) {
+  Trade.bestTradeExactIn = function bestTradeExactIn(pairs, exchange, currencyAmountIn, currencyOut, _temp, // used in recursion.
+  currentPairs, originalAmountIn, bestTrades) {
     var _ref = _temp === void 0 ? {} : _temp,
         _ref$maxNumResults = _ref.maxNumResults,
         maxNumResults = _ref$maxNumResults === void 0 ? 3 : _ref$maxNumResults,
@@ -1284,10 +1290,10 @@ var Trade = /*#__PURE__*/function () {
       } else if (maxHops > 1 && pairs.length > 1) {
         var pairsExcludingThisPair = pairs.slice(0, i).concat(pairs.slice(i + 1, pairs.length)); // otherwise, consider all the other paths that lead from this token as long as we have not exceeded maxHops
 
-        Trade.bestTradeExactIn(pairsExcludingThisPair, amountOut, currencyOut, {
+        Trade.bestTradeExactIn(pairsExcludingThisPair, exchange, amountOut, currencyOut, {
           maxNumResults: maxNumResults,
           maxHops: maxHops - 1
-        }, [].concat(currentPairs, [pair]), originalAmountIn, bestTrades, exchange);
+        }, [].concat(currentPairs, [pair]), originalAmountIn, bestTrades);
       }
     }
 
@@ -1300,6 +1306,7 @@ var Trade = /*#__PURE__*/function () {
    * note this does not consider aggregation, as routes are linear. it's possible a better route exists by splitting
    * the amount in among multiple routes.
    * @param pairs the pairs to consider in finding the best trade
+   * @param exchange the exchange this trade will be performed on
    * @param currencyIn the currency to spend
    * @param currencyAmountOut the exact amount of currency out
    * @param maxNumResults maximum number of results to return
@@ -1310,8 +1317,8 @@ var Trade = /*#__PURE__*/function () {
    */
   ;
 
-  Trade.bestTradeExactOut = function bestTradeExactOut(pairs, currencyIn, currencyAmountOut, _temp2, // used in recursion.
-  currentPairs, originalAmountOut, bestTrades, exchange) {
+  Trade.bestTradeExactOut = function bestTradeExactOut(pairs, exchange, currencyIn, currencyAmountOut, _temp2, // used in recursion.
+  currentPairs, originalAmountOut, bestTrades) {
     var _ref2 = _temp2 === void 0 ? {} : _temp2,
         _ref2$maxNumResults = _ref2.maxNumResults,
         maxNumResults = _ref2$maxNumResults === void 0 ? 3 : _ref2$maxNumResults,
@@ -1366,10 +1373,10 @@ var Trade = /*#__PURE__*/function () {
       } else if (maxHops > 1 && pairs.length > 1) {
         var pairsExcludingThisPair = pairs.slice(0, i).concat(pairs.slice(i + 1, pairs.length)); // otherwise, consider all the other paths that arrive at this token as long as we have not exceeded maxHops
 
-        Trade.bestTradeExactOut(pairsExcludingThisPair, currencyIn, amountIn, {
+        Trade.bestTradeExactOut(pairsExcludingThisPair, exchange, currencyIn, amountIn, {
           maxNumResults: maxNumResults,
           maxHops: maxHops - 1
-        }, [pair].concat(currentPairs), originalAmountOut, bestTrades, exchange);
+        }, [pair].concat(currentPairs), originalAmountOut, bestTrades);
       }
     }
 

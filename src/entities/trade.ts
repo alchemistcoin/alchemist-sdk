@@ -105,6 +105,11 @@ function wrappedCurrency(currency: Currency, chainId: ChainId): Token {
  */
 export class Trade {
   /**
+   * The exchange of the trade e.g. Uni, Sushi
+   */
+   public readonly exchange: Exchange
+
+  /**
    * The route of the trade, i.e. which pairs the trade goes through.
    */
   public readonly route: Route
@@ -147,11 +152,11 @@ export class Trade {
    * @param route route of the exact out trade
    * @param amountOut the amount returned by the trade
    */
-  public static exactOut(route: Route, amountOut: CurrencyAmount, exchange : Exchange): Trade {
+  public static exactOut(route: Route, amountOut: CurrencyAmount, exchange: Exchange): Trade {
     return new Trade(route, amountOut, TradeType.EXACT_OUTPUT, exchange)
   }
 
-  public constructor(route: Route, amount: CurrencyAmount, tradeType: TradeType, exchange : Exchange) {
+  public constructor(route: Route, amount: CurrencyAmount, tradeType: TradeType, exchange: Exchange) {
     const amounts: TokenAmount[] = new Array(route.path.length)
     const nextPairs: Pair[] = new Array(route.pairs.length)
     if (tradeType === TradeType.EXACT_INPUT) {
@@ -173,21 +178,21 @@ export class Trade {
         nextPairs[i - 1] = nextPair
       }
     }
-
+    this.exchange = exchange
     this.route = route
     this.tradeType = tradeType
     this.inputAmount =
       tradeType === TradeType.EXACT_INPUT
         ? amount
         : route.input === ETHER
-        ? CurrencyAmount.ether(amounts[0].raw)
-        : amounts[0]
+          ? CurrencyAmount.ether(amounts[0].raw)
+          : amounts[0]
     this.outputAmount =
       tradeType === TradeType.EXACT_OUTPUT
         ? amount
         : route.output === ETHER
-        ? CurrencyAmount.ether(amounts[amounts.length - 1].raw)
-        : amounts[amounts.length - 1]
+          ? CurrencyAmount.ether(amounts[amounts.length - 1].raw)
+          : amounts[amounts.length - 1]
     this.executionPrice = new Price(
       this.inputAmount.currency,
       this.outputAmount.currency,
@@ -239,6 +244,7 @@ export class Trade {
    * Note this does not consider aggregation, as routes are linear. It's possible a better route exists by splitting
    * the amount in among multiple routes.
    * @param pairs the pairs to consider in finding the best trade
+   * @param exchange the exchange this trade will be performed on
    * @param currencyAmountIn exact amount of input currency to spend
    * @param currencyOut the desired currency out
    * @param maxNumResults maximum number of results to return
@@ -249,14 +255,14 @@ export class Trade {
    */
   public static bestTradeExactIn(
     pairs: Pair[],
+    exchange: Exchange,
     currencyAmountIn: CurrencyAmount,
     currencyOut: Currency,
     { maxNumResults = 3, maxHops = 3 }: BestTradeOptions = {},
     // used in recursion.
     currentPairs: Pair[] = [],
     originalAmountIn: CurrencyAmount = currencyAmountIn,
-    bestTrades: Trade[] = [],
-    exchange : Exchange
+    bestTrades: Trade[] = []
   ): Trade[] {
     invariant(pairs.length > 0, 'PAIRS')
     invariant(maxHops > 0, 'MAX_HOPS')
@@ -265,8 +271,8 @@ export class Trade {
       currencyAmountIn instanceof TokenAmount
         ? currencyAmountIn.token.chainId
         : currencyOut instanceof Token
-        ? currencyOut.chainId
-        : undefined
+          ? currencyOut.chainId
+          : undefined
     invariant(chainId !== undefined, 'CHAIN_ID')
 
     const amountIn = wrappedAmount(currencyAmountIn, chainId)
@@ -306,6 +312,7 @@ export class Trade {
         // otherwise, consider all the other paths that lead from this token as long as we have not exceeded maxHops
         Trade.bestTradeExactIn(
           pairsExcludingThisPair,
+          exchange,
           amountOut,
           currencyOut,
           {
@@ -314,8 +321,7 @@ export class Trade {
           },
           [...currentPairs, pair],
           originalAmountIn,
-          bestTrades,
-          exchange
+          bestTrades
         )
       }
     }
@@ -330,6 +336,7 @@ export class Trade {
    * note this does not consider aggregation, as routes are linear. it's possible a better route exists by splitting
    * the amount in among multiple routes.
    * @param pairs the pairs to consider in finding the best trade
+   * @param exchange the exchange this trade will be performed on
    * @param currencyIn the currency to spend
    * @param currencyAmountOut the exact amount of currency out
    * @param maxNumResults maximum number of results to return
@@ -340,14 +347,14 @@ export class Trade {
    */
   public static bestTradeExactOut(
     pairs: Pair[],
+    exchange: Exchange,
     currencyIn: Currency,
     currencyAmountOut: CurrencyAmount,
     { maxNumResults = 3, maxHops = 3 }: BestTradeOptions = {},
     // used in recursion.
     currentPairs: Pair[] = [],
     originalAmountOut: CurrencyAmount = currencyAmountOut,
-    bestTrades: Trade[] = [],
-    exchange : Exchange
+    bestTrades: Trade[] = []
   ): Trade[] {
     invariant(pairs.length > 0, 'PAIRS')
     invariant(maxHops > 0, 'MAX_HOPS')
@@ -356,8 +363,8 @@ export class Trade {
       currencyAmountOut instanceof TokenAmount
         ? currencyAmountOut.token.chainId
         : currencyIn instanceof Token
-        ? currencyIn.chainId
-        : undefined
+          ? currencyIn.chainId
+          : undefined
     invariant(chainId !== undefined, 'CHAIN_ID')
 
     const amountOut = wrappedAmount(currencyAmountOut, chainId)
@@ -397,6 +404,7 @@ export class Trade {
         // otherwise, consider all the other paths that arrive at this token as long as we have not exceeded maxHops
         Trade.bestTradeExactOut(
           pairsExcludingThisPair,
+          exchange,
           currencyIn,
           amountIn,
           {
@@ -405,8 +413,7 @@ export class Trade {
           },
           [pair, ...currentPairs],
           originalAmountOut,
-          bestTrades,
-          exchange
+          bestTrades
         )
       }
     }
