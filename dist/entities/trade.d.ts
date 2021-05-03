@@ -41,6 +41,10 @@ export declare class Trade {
      */
     readonly minerBribe: CurrencyAmount;
     /**
+     * The estimated gas used for the trade
+     */
+    readonly estimatedGas: BigintIsh;
+    /**
      * The price expressed in terms of output amount/input amount.
      */
     readonly executionPrice: Price;

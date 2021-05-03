@@ -1149,6 +1149,7 @@ var Trade = /*#__PURE__*/function () {
     var methodName = Trade.methodNameForTradeType(tradeType, etherIn, etherOut);
     var estimatedGas = estimatedGasForMethod(methodName, (route.path.length - 1).toString());
     var minerBribe = calculateMinerBribe(gasPriceToBeat, estimatedGas, minerBribeMargin);
+    this.estimatedGas = estimatedGas.toString();
     this.minerBribe = CurrencyAmount.ether(minerBribe);
 
     if (tradeType === exports.TradeType.EXACT_INPUT) {
@@ -1157,27 +1158,32 @@ var Trade = /*#__PURE__*/function () {
 
       for (var i = 0; i < route.path.length - 1; i++) {
         var pair = route.pairs[i];
-        var iAmount = amounts[i]; // if the input is ETH, calculate the output amount with the
+        var inputAmount = amounts[i]; // if the input is ETH, calculate the output amount with the
         // the input reduced by the minerBribe
 
         if (etherIn && i === 0) {
-          var modifiedAmount = iAmount.subtract(wrappedAmount(this.minerBribe, route.chainId));
-          console.log('original amount in', iAmount.toExact());
-          console.log('modified amount in', modifiedAmount.toExact());
-          iAmount = modifiedAmount;
+          // reduce the inputAmount by this.minerBribe
+          !inputAmount.greaterThan(this.minerBribe) ?  invariant(false, "Miner bribe is greater than input ETH")  : void 0;
+          var modifiedAmount = inputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId)); // console.log('original amount in', inputAmount.toExact())
+          // console.log('modified amount in', modifiedAmount.toExact())
+
+          inputAmount = modifiedAmount;
         }
 
-        var _pair$getOutputAmount = pair.getOutputAmount(iAmount),
+        var _pair$getOutputAmount = pair.getOutputAmount(inputAmount),
             outputAmount = _pair$getOutputAmount[0],
             nextPair = _pair$getOutputAmount[1]; // if the output is ETH, reduce the output amount
         // by the miner bribe
 
 
         if (etherOut && i === route.path.length - 2) {
-          var _modifiedAmount = outputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId));
+          // reduce the outputAmount by this.minerBribe
+          !outputAmount.greaterThan(this.minerBribe) ?  invariant(false, "Miner bribe is greater than output ETH")  : void 0;
 
-          console.log('original amount out', outputAmount.toExact());
-          console.log('modified amount out', _modifiedAmount.toExact());
+          var _modifiedAmount = outputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId)); // console.log('original amount out', outputAmount.toExact())
+          // console.log('modified amount out', modifiedAmount.toExact())
+
+
           amounts[i + 1] = _modifiedAmount;
         } else {
           amounts[i + 1] = outputAmount;
@@ -1190,33 +1196,35 @@ var Trade = /*#__PURE__*/function () {
       amounts[amounts.length - 1] = wrappedAmount(amount, route.chainId);
 
       for (var _i = route.path.length - 1; _i > 0; _i--) {
-        var _iAmount = amounts[_i]; // if the output is ETH, calculate the input amount with the
+        var _outputAmount = amounts[_i]; // if the output is ETH, calculate the input amount with the
         // the output increased by the minerBribe
 
         if (etherOut && _i === route.path.length - 1) {
-          var _modifiedAmount2 = _iAmount.add(wrappedAmount(this.minerBribe, route.chainId));
+          // increase the outputAmount by this.minerBribe
+          var _modifiedAmount2 = _outputAmount.add(wrappedAmount(this.minerBribe, route.chainId)); // console.log('original amount out', outputAmount.toExact())
+          // console.log('modified amount out', modifiedAmount.toExact())
 
-          console.log('original amount out', _iAmount.toExact());
-          console.log('modified amount out', _modifiedAmount2.toExact());
-          _iAmount = _modifiedAmount2;
+
+          _outputAmount = _modifiedAmount2;
         }
 
         var _pair = route.pairs[_i - 1];
 
-        var _pair$getInputAmount = _pair.getInputAmount(_iAmount),
-            inputAmount = _pair$getInputAmount[0],
+        var _pair$getInputAmount = _pair.getInputAmount(_outputAmount),
+            _inputAmount = _pair$getInputAmount[0],
             _nextPair = _pair$getInputAmount[1]; // if the input is ETH, increase the input amount
         // by the miner bribe
 
 
         if (etherIn && _i === 1) {
-          var _modifiedAmount3 = inputAmount.add(wrappedAmount(this.minerBribe, route.chainId));
+          // increase the input amount by this.minerBribe
+          var _modifiedAmount3 = _inputAmount.add(wrappedAmount(this.minerBribe, route.chainId)); // console.log('original amount in', inputAmount.toExact())
+          // console.log('modified amount in', modifiedAmount.toExact())
 
-          console.log('original amount in', inputAmount.toExact());
-          console.log('modified amount in', _modifiedAmount3.toExact());
+
           amounts[_i - 1] = _modifiedAmount3;
         } else {
-          amounts[_i - 1] = inputAmount;
+          amounts[_i - 1] = _inputAmount;
         }
 
         nextPairs[_i - 1] = _nextPair;
@@ -1229,18 +1237,19 @@ var Trade = /*#__PURE__*/function () {
     this.outputAmount = tradeType === exports.TradeType.EXACT_OUTPUT ? amount : route.output === ETHER ? CurrencyAmount.ether(amounts[amounts.length - 1].raw) : amounts[amounts.length - 1];
     this.executionPrice = new Price(this.inputAmount.currency, this.outputAmount.currency, this.inputAmount.raw, this.outputAmount.raw);
     this.nextMidPrice = Price.fromRoute(new Route(nextPairs, route.input));
-    this.priceImpact = computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount);
-    console.log('******************');
-    console.log('*** TRADE START **');
-    console.log('******************');
-    console.log('inputAmount', this.inputAmount.toSignificant(6));
-    console.log('outputAmount', this.outputAmount.toSignificant(6));
-    console.log('executionPrice', this.executionPrice.toSignificant(6));
-    console.log('nextMidPrice', this.nextMidPrice.toSignificant(6));
-    console.log('priceImpact', this.priceImpact.toSignificant(6));
-    console.log('******************');
-    console.log('*** TRADE END **');
-    console.log('******************');
+    this.priceImpact = computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount); // console.log('******************')
+    // console.log('*** TRADE START **')
+    // console.log('******************')
+    // console.log('inputAmount', this.inputAmount.toSignificant(6))
+    // console.log('outputAmount', this.outputAmount.toSignificant(6))
+    // console.log('executionPrice', this.executionPrice.toSignificant(6))
+    // console.log('nextMidPrice', this.nextMidPrice.toSignificant(6))
+    // console.log('priceImpact', this.priceImpact.toSignificant(6))
+    // console.log('minerBribe', this.minerBribe.toSignificant(6))
+    // console.log('estimatedGas', this.estimatedGas)
+    // console.log('******************')
+    // console.log('*** TRADE END **')
+    // console.log('******************')
   }
   /**
    * Constructs an exact in trade with the given amount in and route
