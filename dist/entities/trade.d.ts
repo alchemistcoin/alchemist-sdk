@@ -1,4 +1,4 @@
-import { Exchange, TradeType } from '../constants';
+import { BigintIsh, Exchange, TradeType } from '../constants';
 import { Currency } from './currency';
 import { CurrencyAmount } from './fractions/currencyAmount';
 import { Percent } from './fractions/percent';
@@ -41,6 +41,14 @@ export declare class Trade {
      */
     readonly outputAmount: CurrencyAmount;
     /**
+     * The bribe amount needed to execute the trade
+     */
+    readonly minerBribe: CurrencyAmount;
+    /**
+     * The estimated gas used for the trade
+     */
+    readonly estimatedGas: BigintIsh;
+    /**
      * The price expressed in terms of output amount/input amount.
      */
     readonly executionPrice: Price;
@@ -57,14 +65,14 @@ export declare class Trade {
      * @param route route of the exact in trade
      * @param amountIn the amount being passed in
      */
-    static exactIn(route: Route, amountIn: CurrencyAmount, exchange: Exchange): Trade;
+    static exactIn(route: Route, amountIn: CurrencyAmount, exchange: Exchange, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh): Trade;
     /**
      * Constructs an exact out trade with the given amount out and route
      * @param route route of the exact out trade
      * @param amountOut the amount returned by the trade
      */
-    static exactOut(route: Route, amountOut: CurrencyAmount, exchange: Exchange): Trade;
-    constructor(route: Route, amount: CurrencyAmount, tradeType: TradeType, exchange: Exchange);
+    static exactOut(route: Route, amountOut: CurrencyAmount, exchange: Exchange, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh): Trade;
+    constructor(route: Route, amount: CurrencyAmount, tradeType: TradeType, exchange: Exchange, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh);
     /**
      * Get the minimum amount that must be received from this trade for the given slippage tolerance
      * @param slippageTolerance tolerance of unfavorable slippage from the execution price of this trade
@@ -89,8 +97,10 @@ export declare class Trade {
      * @param currentPairs used in recursion; the current list of pairs
      * @param originalAmountIn used in recursion; the original value of the currencyAmountIn parameter
      * @param bestTrades used in recursion; the current list of best trades
+     * @param gasPriceToBeat used to calculate the miner bribe
+     * @param minerBribeMargin used as the margin for the miner bribe calculation
      */
-    static bestTradeExactIn(pairs: Pair[], exchange: Exchange, currencyAmountIn: CurrencyAmount, currencyOut: Currency, { maxNumResults, maxHops }?: BestTradeOptions, currentPairs?: Pair[], originalAmountIn?: CurrencyAmount, bestTrades?: Trade[]): Trade[];
+    static bestTradeExactIn(pairs: Pair[], exchange: Exchange, currencyAmountIn: CurrencyAmount, currencyOut: Currency, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh, { maxNumResults, maxHops }?: BestTradeOptions, currentPairs?: Pair[], originalAmountIn?: CurrencyAmount, bestTrades?: Trade[]): Trade[];
     /**
      * similar to the above method but instead targets a fixed output amount
      * given a list of pairs, and a fixed amount out, returns the top `maxNumResults` trades that go from an input token
@@ -106,7 +116,18 @@ export declare class Trade {
      * @param currentPairs used in recursion; the current list of pairs
      * @param originalAmountOut used in recursion; the original value of the currencyAmountOut parameter
      * @param bestTrades used in recursion; the current list of best trades
+     * @param gasPriceToBeat used to calculate the miner bribe
+     * @param minerBribeMargin used as the margin for the miner bribe calculation
      */
-    static bestTradeExactOut(pairs: Pair[], exchange: Exchange, currencyIn: Currency, currencyAmountOut: CurrencyAmount, { maxNumResults, maxHops }?: BestTradeOptions, currentPairs?: Pair[], originalAmountOut?: CurrencyAmount, bestTrades?: Trade[]): Trade[];
+    static bestTradeExactOut(pairs: Pair[], exchange: Exchange, currencyIn: Currency, currencyAmountOut: CurrencyAmount, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh, { maxNumResults, maxHops }?: BestTradeOptions, currentPairs?: Pair[], originalAmountOut?: CurrencyAmount, bestTrades?: Trade[]): Trade[];
+    /**
+     * return the mistX router method name for the trade
+     * @param tradeType the type of trade, TradeType
+     * @param etherIn the input currency is ether
+     * @param etherOut the output currency is ether
+     * @param useFeeOnTransfer Whether any of the tokens in the path are fee on transfer tokens, TradeOptions.feeOnTransfer
+     * @param enforceUseFeeOnTransfer use to throw an invariant if there is no useFeeOnTransfer option for TradeType.EXACT_OUTPUT trades
+     */
+    static methodNameForTradeType(tradeType: TradeType, etherIn: boolean, etherOut: boolean, useFeeOnTransfer?: boolean): string;
 }
 export {};

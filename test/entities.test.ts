@@ -1,5 +1,5 @@
 import invariant from 'tiny-invariant'
-import { ChainId, WETH as _WETH, TradeType, Rounding, Token, TokenAmount, Pair, Route, Trade } from '../src'
+import { ChainId, WETH as _WETH, TradeType, Rounding, Token, TokenAmount, Pair, Route, Trade, Exchange } from '../src'
 
 const ADDRESSES = [
   '0x0000000000000000000000000000000000000001',
@@ -13,6 +13,8 @@ const DECIMAL_PERMUTATIONS: [number, number, number][] = [
   [0, 9, 18],
   [18, 18, 18]
 ]
+const gas_price_to_beat = `55440000000`
+const miner_bribe_margin = `5`
 
 function decimalize(amount: number, decimals: number): bigint {
   return BigInt(amount) * BigInt(10) ** BigInt(decimals)
@@ -36,15 +38,18 @@ describe('entities', () => {
         pairs = [
           new Pair(
             new TokenAmount(tokens[0], decimalize(1, tokens[0].decimals)),
-            new TokenAmount(tokens[1], decimalize(1, tokens[1].decimals))
+            new TokenAmount(tokens[1], decimalize(1, tokens[1].decimals)),
+            Exchange.UNI
           ),
           new Pair(
             new TokenAmount(tokens[1], decimalize(1, tokens[1].decimals)),
-            new TokenAmount(tokens[2], decimalize(1, tokens[2].decimals))
+            new TokenAmount(tokens[2], decimalize(1, tokens[2].decimals)),
+            Exchange.UNI
           ),
           new Pair(
             new TokenAmount(tokens[2], decimalize(1, tokens[2].decimals)),
-            new TokenAmount(WETH, decimalize(1234, WETH.decimals))
+            new TokenAmount(WETH, decimalize(1234, WETH.decimals)),
+            Exchange.UNI
           )
         ]
       })
@@ -104,14 +109,15 @@ describe('entities', () => {
             [
               new Pair(
                 new TokenAmount(tokens[1], decimalize(5, tokens[1].decimals)),
-                new TokenAmount(WETH, decimalize(10, WETH.decimals))
+                new TokenAmount(WETH, decimalize(10, WETH.decimals)),
+                Exchange.UNI
               )
             ],
             tokens[1]
           )
           const inputAmount = new TokenAmount(tokens[1], decimalize(1, tokens[1].decimals))
           const expectedOutputAmount = new TokenAmount(WETH, '1662497915624478906')
-          const trade = new Trade(route, inputAmount, TradeType.EXACT_INPUT)
+          const trade = new Trade(route, inputAmount, TradeType.EXACT_INPUT, Exchange.UNI, gas_price_to_beat, miner_bribe_margin)
           expect(trade.route).toEqual(route)
           expect(trade.tradeType).toEqual(TradeType.EXACT_INPUT)
           expect(trade.inputAmount).toEqual(inputAmount)
@@ -131,7 +137,7 @@ describe('entities', () => {
         it('TradeType.EXACT_OUTPUT', () => {
           const outputAmount = new TokenAmount(WETH, '1662497915624478906')
           const expectedInputAmount = new TokenAmount(tokens[1], decimalize(1, tokens[1].decimals))
-          const trade = new Trade(route, outputAmount, TradeType.EXACT_OUTPUT)
+          const trade = new Trade(route, outputAmount, TradeType.EXACT_OUTPUT, Exchange.UNI, gas_price_to_beat, miner_bribe_margin)
           expect(trade.route).toEqual(route)
           expect(trade.tradeType).toEqual(TradeType.EXACT_OUTPUT)
           expect(trade.outputAmount).toEqual(outputAmount)
@@ -158,13 +164,14 @@ describe('entities', () => {
                     WETH,
                     decimalize(10, WETH.decimals) +
                       (tokens[1].decimals === 9 ? BigInt('30090280812437312') : BigInt('30090270812437322'))
-                  )
+                  ),
+                  Exchange.UNI
                 )
               ],
               tokens[1]
             )
             const outputAmount = new TokenAmount(tokens[1], '1')
-            const trade = new Trade(route, outputAmount, TradeType.EXACT_INPUT)
+            const trade = new Trade(route, outputAmount, TradeType.EXACT_INPUT, Exchange.UNI, gas_price_to_beat, miner_bribe_margin)
 
             expect(trade.priceImpact.toSignificant(18)).toEqual(
               tokens[1].decimals === 9 ? '0.300000099400899902' : '0.3000000000000001'

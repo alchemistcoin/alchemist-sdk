@@ -25,6 +25,9 @@ export declare enum Rounding {
 export declare const FACTORY_ADDRESS: {
     [exchange in Exchange]: string;
 };
+export declare const ROUTER_ADDRESS: {
+    [exchange in Exchange]: string;
+};
 export declare const INIT_CODE_HASH: {
     [exchange in Exchange]: string;
 };
@@ -45,4 +48,7 @@ export declare enum SolidityType {
 export declare const SOLIDITY_TYPE_MAXIMA: {
     uint8: JSBI;
     uint256: JSBI;
+};
+export declare const GAS_ESTIMATES: {
+    [methodName: string]: BigintIsh;
 };

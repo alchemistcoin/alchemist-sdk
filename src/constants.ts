@@ -35,6 +35,12 @@ export const FACTORY_ADDRESS: { [exchange in Exchange]: string } = {
   [Exchange.UNDEFINED]: '0x0',
 }
 
+export const ROUTER_ADDRESS: { [exchange in Exchange]: string } = {
+  [Exchange.UNI]: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
+  [Exchange.SUSHI]: '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9',
+  [Exchange.UNDEFINED]: '0x0'
+}
+
 export const INIT_CODE_HASH: { [exchange in Exchange]: string } = {
   [Exchange.UNI]: '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
   [Exchange.SUSHI]: '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303',
@@ -62,4 +68,13 @@ export enum SolidityType {
 export const SOLIDITY_TYPE_MAXIMA = {
   [SolidityType.uint8]: JSBI.BigInt('0xff'),
   [SolidityType.uint256]: JSBI.BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
+}
+
+export const GAS_ESTIMATES: {[ methodName: string ]: BigintIsh} = {
+  swapETHForExactTokens: '174552',
+  swapExactETHForTokens: '161308',
+  swapExactTokensForETH: '146035',
+  swapExactTokensForTokens: '143216',
+  swapTokensForExactETH: '189218',
+  swapTokensForExactTokens: '185118'
 }
