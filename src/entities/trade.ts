@@ -1,6 +1,6 @@
 import invariant from 'tiny-invariant'
 
-import { BigintIsh, ChainId, ONE, TradeType, ZERO } from '../constants'
+import { BigintIsh, ChainId, Exchange, ONE, TradeType, ZERO } from '../constants'
 import { sortedInsert, calculateMinerBribe, estimatedGasForMethod } from '../utils'
 import { Currency, ETHER } from './currency'
 import { CurrencyAmount } from './fractions/currencyAmount'
@@ -105,6 +105,11 @@ function wrappedCurrency(currency: Currency, chainId: ChainId): Token {
  */
 export class Trade {
   /**
+   * The exchange of the trade e.g. Uni, Sushi
+   */
+   public readonly exchange: Exchange
+
+  /**
    * The route of the trade, i.e. which pairs the trade goes through.
    */
   public readonly route: Route
@@ -146,8 +151,8 @@ export class Trade {
    * @param route route of the exact in trade
    * @param amountIn the amount being passed in
    */
-  public static exactIn(route: Route, amountIn: CurrencyAmount,gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh): Trade {
-    return new Trade(route, amountIn, TradeType.EXACT_INPUT, gasPriceToBeat, minerBribeMargin)
+  public static exactIn(route: Route, amountIn: CurrencyAmount, exchange: Exchange, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh): Trade {
+    return new Trade(route, amountIn, TradeType.EXACT_INPUT, exchange, gasPriceToBeat, minerBribeMargin)
   }
 
   /**
@@ -155,11 +160,12 @@ export class Trade {
    * @param route route of the exact out trade
    * @param amountOut the amount returned by the trade
    */
-  public static exactOut(route: Route, amountOut: CurrencyAmount, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh): Trade {
-    return new Trade(route, amountOut, TradeType.EXACT_OUTPUT, gasPriceToBeat, minerBribeMargin)
+  public static exactOut(route: Route, amountOut: CurrencyAmount, exchange: Exchange, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh): Trade {
+    return new Trade(route, amountOut, TradeType.EXACT_OUTPUT, exchange, gasPriceToBeat, minerBribeMargin)
   }
 
-  public constructor(route: Route, amount: CurrencyAmount, tradeType: TradeType, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh) {
+  public constructor(route: Route, amount: CurrencyAmount, tradeType: TradeType, exchange: Exchange, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh) {
+
     const amounts: TokenAmount[] = new Array(route.path.length)
     const nextPairs: Pair[] = new Array(route.pairs.length)
     const etherIn = route.input === ETHER
@@ -178,6 +184,7 @@ export class Trade {
 
       for (let i = 0; i < route.path.length - 1; i++) {
         const pair = route.pairs[i]
+
         let inputAmount = amounts[i]
         // if the input is ETH, calculate the output amount with the
         // the input reduced by the minerBribe
@@ -189,7 +196,7 @@ export class Trade {
           // console.log('modified amount in', modifiedAmount.toExact())
           inputAmount = modifiedAmount
         }
-        const [outputAmount, nextPair] = pair.getOutputAmount(inputAmount)
+        const [outputAmount, nextPair] = pair.getOutputAmount(inputAmount, exchange)
 
         // if the output is ETH, reduce the output amount
         // by the miner bribe
@@ -203,6 +210,7 @@ export class Trade {
         } else {
           amounts[i + 1] = outputAmount
         }
+
         nextPairs[i] = nextPair
       }
     } else {
@@ -222,7 +230,7 @@ export class Trade {
           outputAmount = modifiedAmount
         }
         const pair = route.pairs[i - 1]
-        const [inputAmount, nextPair] = pair.getInputAmount(outputAmount)
+        const [inputAmount, nextPair] = pair.getInputAmount(outputAmount, exchange)
         // if the input is ETH, increase the input amount
         // by the miner bribe
         if (etherIn && i === 1){
@@ -237,20 +245,23 @@ export class Trade {
         nextPairs[i - 1] = nextPair
       }
     }
+
+    this.exchange = exchange
+
     this.route = route
     this.tradeType = tradeType
     this.inputAmount =
       tradeType === TradeType.EXACT_INPUT
         ? amount
         : route.input === ETHER
-        ? CurrencyAmount.ether(amounts[0].raw)
-        : amounts[0]
+          ? CurrencyAmount.ether(amounts[0].raw)
+          : amounts[0]
     this.outputAmount =
       tradeType === TradeType.EXACT_OUTPUT
         ? amount
         : route.output === ETHER
-        ? CurrencyAmount.ether(amounts[amounts.length - 1].raw)
-        : amounts[amounts.length - 1]
+          ? CurrencyAmount.ether(amounts[amounts.length - 1].raw)
+          : amounts[amounts.length - 1]
     this.executionPrice = new Price(
       this.inputAmount.currency,
       this.outputAmount.currency,
@@ -316,6 +327,7 @@ export class Trade {
    * Note this does not consider aggregation, as routes are linear. It's possible a better route exists by splitting
    * the amount in among multiple routes.
    * @param pairs the pairs to consider in finding the best trade
+   * @param exchange the exchange this trade will be performed on
    * @param currencyAmountIn exact amount of input currency to spend
    * @param currencyOut the desired currency out
    * @param maxNumResults maximum number of results to return
@@ -328,6 +340,7 @@ export class Trade {
    */
   public static bestTradeExactIn(
     pairs: Pair[],
+    exchange: Exchange,
     currencyAmountIn: CurrencyAmount,
     currencyOut: Currency,
     gasPriceToBeat: BigintIsh,
@@ -345,8 +358,8 @@ export class Trade {
       currencyAmountIn instanceof TokenAmount
         ? currencyAmountIn.token.chainId
         : currencyOut instanceof Token
-        ? currencyOut.chainId
-        : undefined
+          ? currencyOut.chainId
+          : undefined
     invariant(chainId !== undefined, 'CHAIN_ID')
     const tradeType = TradeType.EXACT_INPUT
     const amountIn = wrappedAmount(currencyAmountIn, chainId)
@@ -360,7 +373,7 @@ export class Trade {
 
       let amountOut: TokenAmount
       try {
-        ;[amountOut] = pair.getOutputAmount(amountIn)
+        ;[amountOut] = pair.getOutputAmount(amountIn, exchange)
       } catch (error) {
         // input too low
         if (error.isInsufficientInputAmountError) {
@@ -376,6 +389,7 @@ export class Trade {
             new Route([...currentPairs, pair], originalAmountIn.currency, currencyOut),
             originalAmountIn,
             tradeType,
+            exchange,
             gasPriceToBeat,
             minerBribeMargin
           ),
@@ -388,6 +402,7 @@ export class Trade {
         // otherwise, consider all the other paths that lead from this token as long as we have not exceeded maxHops
         Trade.bestTradeExactIn(
           pairsExcludingThisPair,
+          exchange,
           amountOut,
           currencyOut,
           gasPriceToBeat,
@@ -413,6 +428,7 @@ export class Trade {
    * note this does not consider aggregation, as routes are linear. it's possible a better route exists by splitting
    * the amount in among multiple routes.
    * @param pairs the pairs to consider in finding the best trade
+   * @param exchange the exchange this trade will be performed on
    * @param currencyIn the currency to spend
    * @param currencyAmountOut the exact amount of currency out
    * @param maxNumResults maximum number of results to return
@@ -425,6 +441,7 @@ export class Trade {
    */
   public static bestTradeExactOut(
     pairs: Pair[],
+    exchange: Exchange,
     currencyIn: Currency,
     currencyAmountOut: CurrencyAmount,
     gasPriceToBeat: BigintIsh,
@@ -442,8 +459,8 @@ export class Trade {
       currencyAmountOut instanceof TokenAmount
         ? currencyAmountOut.token.chainId
         : currencyIn instanceof Token
-        ? currencyIn.chainId
-        : undefined
+          ? currencyIn.chainId
+          : undefined
     invariant(chainId !== undefined, 'CHAIN_ID')
 
     const amountOut = wrappedAmount(currencyAmountOut, chainId)
@@ -456,7 +473,7 @@ export class Trade {
 
       let amountIn: TokenAmount
       try {
-        ;[amountIn] = pair.getInputAmount(amountOut)
+        ;[amountIn] = pair.getInputAmount(amountOut, exchange)
       } catch (error) {
         // not enough liquidity in this pair
         if (error.isInsufficientReservesError) {
@@ -472,6 +489,7 @@ export class Trade {
             new Route([pair, ...currentPairs], currencyIn, originalAmountOut.currency),
             originalAmountOut,
             TradeType.EXACT_OUTPUT,
+            exchange,
             gasPriceToBeat,
             minerBribeMargin
           ),
@@ -484,6 +502,7 @@ export class Trade {
         // otherwise, consider all the other paths that arrive at this token as long as we have not exceeded maxHops
         Trade.bestTradeExactOut(
           pairsExcludingThisPair,
+          exchange,
           currencyIn,
           amountIn,
           gasPriceToBeat,
