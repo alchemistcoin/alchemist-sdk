@@ -115,27 +115,37 @@ export abstract class Router {
       case 'swapExactETHForTokens':
         // (uint amountOutMin, address[] calldata path, address to, uint deadline)
         // args = [amountOut, path, to, deadline]
+        swapData.amount0 = amountIn
+        swapData.amount1 = amountOut
         value = amountIn
         break
       case 'swapExactTokensForETH':
         // (uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
         // args = [amountIn, amountOut, path, to, deadline]
+        swapData.amount0 = amountIn
+        swapData.amount1 = amountOut
         value = ZERO_HEX
         break
       case 'swapExactTokensForTokens':
         // (uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
         // args = [amountIn, amountOut, path, to, deadline]
+        swapData.amount0 = amountIn
+        swapData.amount1 = amountOut
         value = ZERO_HEX
         break
       case 'swapETHForExactTokens':
         invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
         // (uint amountOut, address[] calldata path, address to, uint deadline)
         // args = [amountOut, path, to, deadline]
+        swapData.amount0 = amountIn
+        swapData.amount1 = amountOut
         value = amountIn
         break
       case 'swapTokensForExactETH':
         invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
         // (uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
+        swapData.amount0 = amountOut
+        swapData.amount1 = amountIn
         // args = [amountOut, amountIn, path, to, deadline]
         value = ZERO_HEX
         break
@@ -143,6 +153,8 @@ export abstract class Router {
         invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
         // (uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
         // args = [amountOut, amountIn, path, to, deadline]
+        swapData.amount0 = amountOut
+        swapData.amount1 = amountIn
         value = ZERO_HEX
         break
       default:
