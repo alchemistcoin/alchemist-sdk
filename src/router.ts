@@ -1,4 +1,3 @@
-import { TradeType } from './constants'
 import invariant from 'tiny-invariant'
 import { validateAndParseAddress } from './utils'
 import { CurrencyAmount, ETHER, Percent, Trade } from './entities'
@@ -47,11 +46,19 @@ export interface SwapParameters {
   /**
    * The arguments to pass to the method, all hex encoded.
    */
-  args: (string | string[])[]
+  args: (string | Swap)[]
   /**
    * The amount of wei to send in hex.
    */
   value: string
+}
+
+export interface Swap {
+  amount0: string
+  amount1: string
+  path: string[]
+  to: string
+  deadline: string
 }
 
 function toHex(currencyAmount: CurrencyAmount) {
@@ -83,6 +90,7 @@ export abstract class Router {
     const to: string = validateAndParseAddress(options.recipient)
     const amountIn: string = toHex(trade.maximumAmountIn(options.allowedSlippage))
     const amountOut: string = toHex(trade.minimumAmountOut(options.allowedSlippage))
+    const minerBribe: string = toHex(trade.minerBribe)
     const path: string[] = trade.route.path.map(token => token.address)
     const deadline =
       'ttl' in options
@@ -91,42 +99,58 @@ export abstract class Router {
 
     const useFeeOnTransfer = Boolean(options.feeOnTransfer)
 
-    let args: (string | string[])[]
+    const swapData: Swap = {
+      amount0: amountIn,
+      amount1: amountOut,
+      path,
+      to,
+      deadline
+    }
+    const args: (string | Swap)[] = [swapData, 'replace_with_router_contract_address', minerBribe]
+    // let args: (string | string[])[]
     let value: string
     const methodName = Trade.methodNameForTradeType(trade.tradeType, etherIn, etherOut, useFeeOnTransfer)
-    switch (trade.tradeType) {
-      case TradeType.EXACT_INPUT:
-        if (etherIn) {
-          // (uint amountOutMin, address[] calldata path, address to, uint deadline)
-          args = [amountOut, path, to, deadline]
-          value = amountIn
-        } else if (etherOut) {
-          // (uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
-          args = [amountIn, amountOut, path, to, deadline]
-          value = ZERO_HEX
-        } else {
-          // (uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
-          args = [amountIn, amountOut, path, to, deadline]
-          value = ZERO_HEX
-        }
+    
+    switch (methodName) {
+      case 'swapExactETHForTokens':
+        // (uint amountOutMin, address[] calldata path, address to, uint deadline)
+        // args = [amountOut, path, to, deadline]
+        value = amountIn
         break
-      case TradeType.EXACT_OUTPUT:
+      case 'swapExactTokensForETH':
+        // (uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
+        // args = [amountIn, amountOut, path, to, deadline]
+        value = ZERO_HEX
+        break
+      case 'swapExactTokensForTokens':
+        // (uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
+        // args = [amountIn, amountOut, path, to, deadline]
+        value = ZERO_HEX
+        break
+      case 'swapETHForExactTokens':
         invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
-        if (etherIn) {
-          // (uint amountOut, address[] calldata path, address to, uint deadline)
-          args = [amountOut, path, to, deadline]
-          value = amountIn
-        } else if (etherOut) {
-          // (uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
-          args = [amountOut, amountIn, path, to, deadline]
-          value = ZERO_HEX
-        } else {
-          // (uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
-          args = [amountOut, amountIn, path, to, deadline]
-          value = ZERO_HEX
-        }
+        // (uint amountOut, address[] calldata path, address to, uint deadline)
+        // args = [amountOut, path, to, deadline]
+        value = amountIn
         break
+      case 'swapTokensForExactETH':
+        invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
+        // (uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
+        // args = [amountOut, amountIn, path, to, deadline]
+        value = ZERO_HEX
+        break
+      case 'swapTokensForExactTokens':
+        invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
+        // (uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
+        // args = [amountOut, amountIn, path, to, deadline]
+        value = ZERO_HEX
+        break
+      default:
+        // args = []
+        value = ''
     }
+
+    invariant((methodName && args && value), 'CALL_PARAMS_MISSING')
     return {
       methodName,
       args,
