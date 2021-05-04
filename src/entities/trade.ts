@@ -176,6 +176,9 @@ export class Trade {
     
     this.estimatedGas = estimatedGas.toString()
     this.minerBribe = CurrencyAmount.ether(minerBribe)
+
+    let modifiedInput: TokenAmount = wrappedAmount(amount, route.chainId)
+    let modifiedOutput: TokenAmount = wrappedAmount(amount, route.chainId)
     
     if (tradeType === TradeType.EXACT_INPUT) {
       invariant(currencyEquals(amount.currency, route.input), 'INPUT')
@@ -195,6 +198,9 @@ export class Trade {
           // console.log('original amount in', inputAmount.toExact())
           // console.log('modified amount in', modifiedAmount.toExact())
           inputAmount = modifiedAmount
+          modifiedInput = modifiedAmount
+        } else if (i === 0){
+          modifiedInput = inputAmount
         }
         const [outputAmount, nextPair] = pair.getOutputAmount(inputAmount, exchange)
 
@@ -207,6 +213,10 @@ export class Trade {
           // console.log('original amount out', outputAmount.toExact())
           // console.log('modified amount out', modifiedAmount.toExact())
           amounts[i + 1] = modifiedAmount
+          modifiedOutput = modifiedAmount
+        } else if (i === route.path.length - 2){
+          modifiedOutput = outputAmount
+          amounts[i + 1] = outputAmount
         } else {
           amounts[i + 1] = outputAmount
         }
@@ -228,6 +238,9 @@ export class Trade {
           // console.log('original amount out', outputAmount.toExact())
           // console.log('modified amount out', modifiedAmount.toExact())
           outputAmount = modifiedAmount
+          modifiedOutput = modifiedAmount
+        } else if (i === route.path.length - 1) {
+          modifiedOutput = outputAmount
         }
         const pair = route.pairs[i - 1]
         const [inputAmount, nextPair] = pair.getInputAmount(outputAmount, exchange)
@@ -239,6 +252,10 @@ export class Trade {
           // console.log('original amount in', inputAmount.toExact())
           // console.log('modified amount in', modifiedAmount.toExact())
           amounts[i - 1] = modifiedAmount
+          modifiedInput = modifiedAmount
+        } else if (i === 1){
+          modifiedInput = inputAmount
+          amounts[i - 1] = modifiedInput
         } else {
           amounts[i - 1] = inputAmount
         }
@@ -269,7 +286,7 @@ export class Trade {
       this.outputAmount.raw
     )
     this.nextMidPrice = Price.fromRoute(new Route(nextPairs, route.input))
-    this.priceImpact = computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount)
+    this.priceImpact = computePriceImpact(route.midPrice, modifiedInput, modifiedOutput)
     
     // console.log('******************')
     // console.log('*** TRADE START **')

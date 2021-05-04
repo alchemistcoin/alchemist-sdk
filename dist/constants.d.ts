@@ -25,6 +25,9 @@ export declare enum Rounding {
 export declare const FACTORY_ADDRESS: {
     [exchange in Exchange]: string;
 };
+export declare const ROUTER_ADDRESS: {
+    [exchange in Exchange]: string;
+};
 export declare const INIT_CODE_HASH: {
     [exchange in Exchange]: string;
 };

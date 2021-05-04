@@ -40,19 +40,20 @@ export interface SwapParameters {
     /**
      * The arguments to pass to the method, all hex encoded.
      */
-    args: (string | Swap)[];
+    args: [SwapDataArr, string, string];
     /**
      * The amount of wei to send in hex.
      */
     value: string;
 }
-export interface Swap {
+export interface SwapData {
     amount0: string;
     amount1: string;
     path: string[];
     to: string;
     deadline: string;
 }
+export declare type SwapDataArr = [string, string, string[], string, string];
 /**
  * Represents the Uniswap V2 Router, and has static methods for helping execute trades.
  */

@@ -11,7 +11,7 @@ import { getNetwork } from '@ethersproject/networks';
 import { getDefaultProvider } from '@ethersproject/providers';
 import IUniswapV2Pair from '@uniswap/v2-core/build/IUniswapV2Pair.json';
 
-var _FACTORY_ADDRESS, _INIT_CODE_HASH, _SOLIDITY_TYPE_MAXIMA;
+var _FACTORY_ADDRESS, _ROUTER_ADDRESS, _INIT_CODE_HASH, _SOLIDITY_TYPE_MAXIMA;
 var ChainId;
 
 (function (ChainId) {
@@ -47,6 +47,7 @@ var Rounding;
 })(Rounding || (Rounding = {}));
 
 var FACTORY_ADDRESS = (_FACTORY_ADDRESS = {}, _FACTORY_ADDRESS[Exchange.UNI] = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f', _FACTORY_ADDRESS[Exchange.SUSHI] = '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac', _FACTORY_ADDRESS[Exchange.UNDEFINED] = '0x0', _FACTORY_ADDRESS);
+var ROUTER_ADDRESS = (_ROUTER_ADDRESS = {}, _ROUTER_ADDRESS[Exchange.UNI] = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D', _ROUTER_ADDRESS[Exchange.SUSHI] = '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9', _ROUTER_ADDRESS[Exchange.UNDEFINED] = '0x0', _ROUTER_ADDRESS);
 var INIT_CODE_HASH = (_INIT_CODE_HASH = {}, _INIT_CODE_HASH[Exchange.UNI] = '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f', _INIT_CODE_HASH[Exchange.SUSHI] = '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303', _INIT_CODE_HASH[Exchange.UNDEFINED] = '0x0', _INIT_CODE_HASH);
 var MINIMUM_LIQUIDITY = /*#__PURE__*/JSBI.BigInt(1000); // exports for internal consumption
 
@@ -1162,6 +1163,8 @@ var Trade = /*#__PURE__*/function () {
     var minerBribe = calculateMinerBribe(gasPriceToBeat, estimatedGas, minerBribeMargin);
     this.estimatedGas = estimatedGas.toString();
     this.minerBribe = CurrencyAmount.ether(minerBribe);
+    var modifiedInput = wrappedAmount(amount, route.chainId);
+    var modifiedOutput = wrappedAmount(amount, route.chainId);
 
     if (tradeType === TradeType.EXACT_INPUT) {
       !currencyEquals(amount.currency, route.input) ? process.env.NODE_ENV !== "production" ? invariant(false, 'INPUT') : invariant(false) : void 0;
@@ -1179,6 +1182,9 @@ var Trade = /*#__PURE__*/function () {
           // console.log('modified amount in', modifiedAmount.toExact())
 
           inputAmount = modifiedAmount;
+          modifiedInput = modifiedAmount;
+        } else if (i === 0) {
+          modifiedInput = inputAmount;
         }
 
         var _pair$getOutputAmount = pair.getOutputAmount(inputAmount, exchange),
@@ -1196,6 +1202,10 @@ var Trade = /*#__PURE__*/function () {
 
 
           amounts[i + 1] = _modifiedAmount;
+          modifiedOutput = _modifiedAmount;
+        } else if (i === route.path.length - 2) {
+          modifiedOutput = outputAmount;
+          amounts[i + 1] = outputAmount;
         } else {
           amounts[i + 1] = outputAmount;
         }
@@ -1217,6 +1227,9 @@ var Trade = /*#__PURE__*/function () {
 
 
           _outputAmount = _modifiedAmount2;
+          modifiedOutput = _modifiedAmount2;
+        } else if (_i === route.path.length - 1) {
+          modifiedOutput = _outputAmount;
         }
 
         var _pair = route.pairs[_i - 1];
@@ -1234,6 +1247,10 @@ var Trade = /*#__PURE__*/function () {
 
 
           amounts[_i - 1] = _modifiedAmount3;
+          modifiedInput = _modifiedAmount3;
+        } else if (_i === 1) {
+          modifiedInput = _inputAmount;
+          amounts[_i - 1] = modifiedInput;
         } else {
           amounts[_i - 1] = _inputAmount;
         }
@@ -1249,7 +1266,7 @@ var Trade = /*#__PURE__*/function () {
     this.outputAmount = tradeType === TradeType.EXACT_OUTPUT ? amount : route.output === ETHER ? CurrencyAmount.ether(amounts[amounts.length - 1].raw) : amounts[amounts.length - 1];
     this.executionPrice = new Price(this.inputAmount.currency, this.outputAmount.currency, this.inputAmount.raw, this.outputAmount.raw);
     this.nextMidPrice = Price.fromRoute(new Route(nextPairs, route.input));
-    this.priceImpact = computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount); // console.log('******************')
+    this.priceImpact = computePriceImpact(route.midPrice, modifiedInput, modifiedOutput); // console.log('******************')
     // console.log('*** TRADE START **')
     // console.log('******************')
     // console.log('inputAmount', this.inputAmount.toSignificant(6))
@@ -1568,6 +1585,7 @@ var Router = /*#__PURE__*/function () {
     });
     var deadline = 'ttl' in options ? "0x" + (Math.floor(new Date().getTime() / 1000) + options.ttl).toString(16) : "0x" + options.deadline.toString(16);
     var useFeeOnTransfer = Boolean(options.feeOnTransfer);
+    var routerAddress = ROUTER_ADDRESS[trade.exchange];
     var swapData = {
       amount0: amountIn,
       amount1: amountOut,
@@ -1575,49 +1593,47 @@ var Router = /*#__PURE__*/function () {
       to: to,
       deadline: deadline
     };
-    var args = [swapData, 'replace_with_router_contract_address', minerBribe]; // let args: (string | string[])[]
-
     var value;
     var methodName = Trade.methodNameForTradeType(trade.tradeType, etherIn, etherOut, useFeeOnTransfer);
 
     switch (methodName) {
       case 'swapExactETHForTokens':
-        // (uint amountOutMin, address[] calldata path, address to, uint deadline)
-        // args = [amountOut, path, to, deadline]
+        swapData.amount0 = amountIn;
+        swapData.amount1 = amountOut;
         value = amountIn;
         break;
 
       case 'swapExactTokensForETH':
-        // (uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
-        // args = [amountIn, amountOut, path, to, deadline]
+        swapData.amount0 = amountIn;
+        swapData.amount1 = amountOut;
         value = ZERO_HEX;
         break;
 
       case 'swapExactTokensForTokens':
-        // (uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
-        // args = [amountIn, amountOut, path, to, deadline]
+        swapData.amount0 = amountIn;
+        swapData.amount1 = amountOut;
         value = ZERO_HEX;
         break;
 
       case 'swapETHForExactTokens':
-        !!useFeeOnTransfer ? process.env.NODE_ENV !== "production" ? invariant(false, 'EXACT_OUT_FOT') : invariant(false) : void 0; // (uint amountOut, address[] calldata path, address to, uint deadline)
-        // args = [amountOut, path, to, deadline]
-
+        !!useFeeOnTransfer ? process.env.NODE_ENV !== "production" ? invariant(false, 'EXACT_OUT_FOT') : invariant(false) : void 0;
+        swapData.amount0 = amountIn;
+        swapData.amount1 = amountOut;
         value = amountIn;
         break;
 
       case 'swapTokensForExactETH':
-        !!useFeeOnTransfer ? process.env.NODE_ENV !== "production" ? invariant(false, 'EXACT_OUT_FOT') : invariant(false) : void 0; // (uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
-        // args = [amountOut, amountIn, path, to, deadline]
-
-        value = ZERO_HEX;
+        !!useFeeOnTransfer ? process.env.NODE_ENV !== "production" ? invariant(false, 'EXACT_OUT_FOT') : invariant(false) : void 0;
+        swapData.amount0 = amountOut;
+        swapData.amount1 = amountIn;
+        value = minerBribe;
         break;
 
       case 'swapTokensForExactTokens':
-        !!useFeeOnTransfer ? process.env.NODE_ENV !== "production" ? invariant(false, 'EXACT_OUT_FOT') : invariant(false) : void 0; // (uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
-        // args = [amountOut, amountIn, path, to, deadline]
-
-        value = ZERO_HEX;
+        !!useFeeOnTransfer ? process.env.NODE_ENV !== "production" ? invariant(false, 'EXACT_OUT_FOT') : invariant(false) : void 0;
+        swapData.amount0 = amountOut;
+        swapData.amount1 = amountIn;
+        value = minerBribe;
         break;
 
       default:
@@ -1625,6 +1641,8 @@ var Router = /*#__PURE__*/function () {
         value = '';
     }
 
+    var swapDataArr = [swapData.amount0, swapData.amount1, swapData.path, swapData.to, swapData.deadline];
+    var args = [swapDataArr, routerAddress, minerBribe];
     !(methodName && args && value) ? process.env.NODE_ENV !== "production" ? invariant(false, 'CALL_PARAMS_MISSING') : invariant(false) : void 0;
     return {
       methodName: methodName,

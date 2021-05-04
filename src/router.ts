@@ -47,20 +47,22 @@ export interface SwapParameters {
   /**
    * The arguments to pass to the method, all hex encoded.
    */
-  args: (string | Swap)[]
+  args: [SwapDataArr, string, string]
   /**
    * The amount of wei to send in hex.
    */
   value: string
 }
 
-export interface Swap {
+export interface SwapData {
   amount0: string
   amount1: string
   path: string[]
   to: string
   deadline: string
 }
+
+export type SwapDataArr = [string, string, string[], string, string]
 
 function toHex(currencyAmount: CurrencyAmount) {
   return `0x${currencyAmount.raw.toString(16)}`
@@ -100,7 +102,7 @@ export abstract class Router {
 
     const useFeeOnTransfer = Boolean(options.feeOnTransfer)
     const routerAddress = ROUTER_ADDRESS[trade.exchange]
-    const swapData: Swap = {
+    const swapData: SwapData = {
       amount0: amountIn,
       amount1: amountOut,
       path,
@@ -136,20 +138,20 @@ export abstract class Router {
         invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
         swapData.amount0 = amountOut
         swapData.amount1 = amountIn
-        value = ZERO_HEX
+        value = minerBribe
         break
       case 'swapTokensForExactTokens':
         invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
         swapData.amount0 = amountOut
         swapData.amount1 = amountIn
-        value = ZERO_HEX
+        value = minerBribe
         break
       default:
         // args = []
         value = ''
     }
-
-    const args: (string | Swap)[] = [swapData, routerAddress, minerBribe]
+    const swapDataArr: SwapDataArr = [swapData.amount0, swapData.amount1, swapData.path, swapData.to, swapData.deadline]
+    const args: [SwapDataArr, string, string] = [swapDataArr, routerAddress, minerBribe]
 
     invariant((methodName && args && value), 'CALL_PARAMS_MISSING')
     return {
