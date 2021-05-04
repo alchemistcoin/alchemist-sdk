@@ -1,6 +1,7 @@
 import invariant from 'tiny-invariant'
 import { validateAndParseAddress } from './utils'
 import { CurrencyAmount, ETHER, Percent, Trade } from './entities'
+import { ROUTER_ADDRESS } from './constants'
 
 /**
  * Options for producing the arguments to send call to the router.
@@ -98,7 +99,7 @@ export abstract class Router {
         : `0x${options.deadline.toString(16)}`
 
     const useFeeOnTransfer = Boolean(options.feeOnTransfer)
-
+    const routerAddress = ROUTER_ADDRESS[trade.exchange]
     const swapData: Swap = {
       amount0: amountIn,
       amount1: amountOut,
@@ -106,53 +107,39 @@ export abstract class Router {
       to,
       deadline
     }
-    const args: (string | Swap)[] = [swapData, 'replace_with_router_contract_address', minerBribe]
-    // let args: (string | string[])[]
     let value: string
     const methodName = Trade.methodNameForTradeType(trade.tradeType, etherIn, etherOut, useFeeOnTransfer)
     
     switch (methodName) {
       case 'swapExactETHForTokens':
-        // (uint amountOutMin, address[] calldata path, address to, uint deadline)
-        // args = [amountOut, path, to, deadline]
         swapData.amount0 = amountIn
         swapData.amount1 = amountOut
         value = amountIn
         break
       case 'swapExactTokensForETH':
-        // (uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
-        // args = [amountIn, amountOut, path, to, deadline]
         swapData.amount0 = amountIn
         swapData.amount1 = amountOut
         value = ZERO_HEX
         break
       case 'swapExactTokensForTokens':
-        // (uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
-        // args = [amountIn, amountOut, path, to, deadline]
         swapData.amount0 = amountIn
         swapData.amount1 = amountOut
         value = ZERO_HEX
         break
       case 'swapETHForExactTokens':
         invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
-        // (uint amountOut, address[] calldata path, address to, uint deadline)
-        // args = [amountOut, path, to, deadline]
         swapData.amount0 = amountIn
         swapData.amount1 = amountOut
         value = amountIn
         break
       case 'swapTokensForExactETH':
         invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
-        // (uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
         swapData.amount0 = amountOut
         swapData.amount1 = amountIn
-        // args = [amountOut, amountIn, path, to, deadline]
         value = ZERO_HEX
         break
       case 'swapTokensForExactTokens':
         invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
-        // (uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
-        // args = [amountOut, amountIn, path, to, deadline]
         swapData.amount0 = amountOut
         swapData.amount1 = amountIn
         value = ZERO_HEX
@@ -161,6 +148,8 @@ export abstract class Router {
         // args = []
         value = ''
     }
+
+    const args: (string | Swap)[] = [swapData, routerAddress, minerBribe]
 
     invariant((methodName && args && value), 'CALL_PARAMS_MISSING')
     return {
