@@ -1546,14 +1546,15 @@ var Trade = /*#__PURE__*/function () {
   /**
    * return the mistX router method name for the trade
    * @param pairs
-   * @param etherIn the input currency is ether
-   * @param etherOut the output currency is ether
-   * @param useFeeOnTransfer Whether any of the tokens in the path are fee on transfer tokens, TradeOptions.feeOnTransfer
-   * @param enforceUseFeeOnTransfer use to throw an invariant if there is no useFeeOnTransfer option for TradeType.EXACT_OUTPUT trades
+   * @param currencyIn
+   * @param currencyOut
+   * @param gasPriceToBeat
+   * @param minerBribeMargin
+   * @param maxHops maximum number of hops a returned trade can make, e.g. 1 hop goes through a single pair
    */
   ;
 
-  Trade.estimateBribes = function estimateBribes(pairs, currencyIn, currencyOut, gasPriceToBeat, minerBribeMargin, _temp3) {
+  Trade.estimateMinTradeAmounts = function estimateMinTradeAmounts(pairs, currencyIn, currencyOut, gasPriceToBeat, minerBribeMargin, minTradeMargin, _temp3) {
     var _ref4;
 
     var _ref3 = _temp3 === void 0 ? {} : _temp3,
@@ -1565,8 +1566,8 @@ var Trade = /*#__PURE__*/function () {
     if (!etherIn && !etherOut) return null;
     var exactInGas = estimatedGasForMethod(Trade.methodNameForTradeType(exports.TradeType.EXACT_INPUT, etherIn, etherOut), maxHops.toString());
     var exactOutGas = estimatedGasForMethod(Trade.methodNameForTradeType(exports.TradeType.EXACT_OUTPUT, etherIn, etherOut), maxHops.toString());
-    var exactInBribe = calculateMinerBribe(gasPriceToBeat, exactInGas, minerBribeMargin);
-    var exactOutBribe = calculateMinerBribe(gasPriceToBeat, exactOutGas, minerBribeMargin);
+    var exactInBribe = calculateMargin(calculateMinerBribe(gasPriceToBeat, exactInGas, minerBribeMargin), minTradeMargin);
+    var exactOutBribe = calculateMargin(calculateMinerBribe(gasPriceToBeat, exactOutGas, minerBribeMargin), minTradeMargin);
     var chainId = currencyIn.chainId || currencyOut.chainId || undefined;
     !chainId ?  invariant(false, 'BRIBE_ESTIMATES_CHAINID')  : void 0;
     var amountOut = wrappedAmount(CurrencyAmount.ether(exactInBribe), chainId);

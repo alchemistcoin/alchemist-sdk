@@ -6,7 +6,7 @@ import { Price } from './fractions/price';
 import { TokenAmount } from './fractions/tokenAmount';
 import { Pair } from './pair';
 import { Route } from './route';
-export declare type BribeEstimation = {
+export declare type MinTradeEstimate = {
     [tradeType in TradeType]: CurrencyAmount;
 };
 interface InputOutput {
@@ -136,11 +136,12 @@ export declare class Trade {
     /**
      * return the mistX router method name for the trade
      * @param pairs
-     * @param etherIn the input currency is ether
-     * @param etherOut the output currency is ether
-     * @param useFeeOnTransfer Whether any of the tokens in the path are fee on transfer tokens, TradeOptions.feeOnTransfer
-     * @param enforceUseFeeOnTransfer use to throw an invariant if there is no useFeeOnTransfer option for TradeType.EXACT_OUTPUT trades
+     * @param currencyIn
+     * @param currencyOut
+     * @param gasPriceToBeat
+     * @param minerBribeMargin
+     * @param maxHops maximum number of hops a returned trade can make, e.g. 1 hop goes through a single pair
      */
-    static estimateBribes(pairs: Pair[], currencyIn: Currency, currencyOut: Currency, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh, { maxHops }?: BestTradeOptions): BribeEstimation | null;
+    static estimateMinTradeAmounts(pairs: Pair[], currencyIn: Currency, currencyOut: Currency, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh, minTradeMargin: BigintIsh, { maxHops }?: BestTradeOptions): MinTradeEstimate | null;
 }
 export {};

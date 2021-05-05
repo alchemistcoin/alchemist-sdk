@@ -1,7 +1,7 @@
 import invariant from 'tiny-invariant'
 
 import { BigintIsh, ChainId, Exchange, ONE, TradeType, ZERO } from '../constants'
-import { sortedInsert, calculateMinerBribe, estimatedGasForMethod } from '../utils'
+import { sortedInsert, calculateMinerBribe, estimatedGasForMethod, calculateMargin } from '../utils'
 import { Currency, ETHER } from './currency'
 import { CurrencyAmount } from './fractions/currencyAmount'
 import { Fraction } from './fractions/fraction'
@@ -25,7 +25,7 @@ function computePriceImpact(midPrice: Price, inputAmount: CurrencyAmount, output
   return new Percent(slippage.numerator, slippage.denominator)
 }
 
-export type BribeEstimation = {[tradeType in TradeType]: CurrencyAmount}
+export type MinTradeEstimate = {[tradeType in TradeType]: CurrencyAmount}
 
 // minimal interface so the input output comparator may be shared across types
 interface InputOutput {
@@ -582,19 +582,21 @@ export class Trade {
   /**
    * return the mistX router method name for the trade
    * @param pairs
-   * @param etherIn the input currency is ether
-   * @param etherOut the output currency is ether
-   * @param useFeeOnTransfer Whether any of the tokens in the path are fee on transfer tokens, TradeOptions.feeOnTransfer
-   * @param enforceUseFeeOnTransfer use to throw an invariant if there is no useFeeOnTransfer option for TradeType.EXACT_OUTPUT trades
+   * @param currencyIn 
+   * @param currencyOut 
+   * @param gasPriceToBeat 
+   * @param minerBribeMargin
+   * @param maxHops maximum number of hops a returned trade can make, e.g. 1 hop goes through a single pair
    */
-   public static estimateBribes(
+   public static estimateMinTradeAmounts(
     pairs: Pair[],
     currencyIn: Currency,
     currencyOut: Currency, 
     gasPriceToBeat: BigintIsh,
     minerBribeMargin: BigintIsh,
+    minTradeMargin: BigintIsh,
     { maxHops = 3 }: BestTradeOptions = {}
-  ): BribeEstimation | null {
+  ): MinTradeEstimate | null {
     const etherIn = currencyIn === ETHER
     const etherOut = currencyOut === ETHER
 
@@ -603,8 +605,8 @@ export class Trade {
     const exactInGas = estimatedGasForMethod(Trade.methodNameForTradeType(TradeType.EXACT_INPUT, etherIn, etherOut), maxHops.toString())
     const exactOutGas = estimatedGasForMethod(Trade.methodNameForTradeType(TradeType.EXACT_OUTPUT, etherIn, etherOut), maxHops.toString())
 
-    const exactInBribe = calculateMinerBribe(gasPriceToBeat, exactInGas, minerBribeMargin)
-    const exactOutBribe = calculateMinerBribe(gasPriceToBeat, exactOutGas, minerBribeMargin)
+    const exactInBribe = calculateMargin(calculateMinerBribe(gasPriceToBeat, exactInGas, minerBribeMargin), minTradeMargin)
+    const exactOutBribe = calculateMargin(calculateMinerBribe(gasPriceToBeat, exactOutGas, minerBribeMargin), minTradeMargin)
 
     const chainId: ChainId | undefined = (currencyIn as Token).chainId || (currencyOut as Token).chainId || undefined
     invariant(chainId, 'BRIBE_ESTIMATES_CHAINID')
