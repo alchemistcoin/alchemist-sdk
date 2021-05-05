@@ -1177,7 +1177,7 @@ var Trade = /*#__PURE__*/function () {
 
         if (etherIn && i === 0) {
           // reduce the inputAmount by this.minerBribe
-          !inputAmount.greaterThan(this.minerBribe) ? process.env.NODE_ENV !== "production" ? invariant(false, "Miner bribe is greater than input ETH") : invariant(false) : void 0;
+          !inputAmount.greaterThan(this.minerBribe) ? process.env.NODE_ENV !== "production" ? invariant(false, "Miner bribe " + this.minerBribe.toExact() + " is greater than input ETH " + inputAmount.toExact()) : invariant(false) : void 0;
           var modifiedAmount = inputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId)); // console.log('original amount in', inputAmount.toExact())
           // console.log('modified amount in', modifiedAmount.toExact())
 
@@ -1195,7 +1195,7 @@ var Trade = /*#__PURE__*/function () {
 
         if (etherOut && i === route.path.length - 2) {
           // reduce the outputAmount by this.minerBribe
-          !outputAmount.greaterThan(this.minerBribe) ? process.env.NODE_ENV !== "production" ? invariant(false, "Miner bribe is greater than output ETH") : invariant(false) : void 0;
+          !outputAmount.greaterThan(this.minerBribe) ? process.env.NODE_ENV !== "production" ? invariant(false, "Miner bribe " + this.minerBribe.toExact() + " is greater than output ETH " + outputAmount.toExact()) : invariant(false) : void 0;
 
           var _modifiedAmount = outputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId)); // console.log('original amount out', outputAmount.toExact())
           // console.log('modified amount out', modifiedAmount.toExact())
@@ -1544,6 +1544,74 @@ var Trade = /*#__PURE__*/function () {
     }
 
     return methodName;
+  }
+  /**
+   * return the mistX router method name for the trade
+   * @param pairs
+   * @param etherIn the input currency is ether
+   * @param etherOut the output currency is ether
+   * @param useFeeOnTransfer Whether any of the tokens in the path are fee on transfer tokens, TradeOptions.feeOnTransfer
+   * @param enforceUseFeeOnTransfer use to throw an invariant if there is no useFeeOnTransfer option for TradeType.EXACT_OUTPUT trades
+   */
+  ;
+
+  Trade.estimateBribes = function estimateBribes(pairs, currencyIn, currencyOut, gasPriceToBeat, minerBribeMargin, _temp3) {
+    var _ref4;
+
+    var _ref3 = _temp3 === void 0 ? {} : _temp3,
+        _ref3$maxHops = _ref3.maxHops,
+        maxHops = _ref3$maxHops === void 0 ? 3 : _ref3$maxHops;
+
+    var etherIn = currencyIn === ETHER;
+    var etherOut = currencyOut === ETHER;
+    if (!etherIn && !etherOut) return null;
+    var exactInGas = estimatedGasForMethod(Trade.methodNameForTradeType(TradeType.EXACT_INPUT, etherIn, etherOut), maxHops.toString());
+    var exactOutGas = estimatedGasForMethod(Trade.methodNameForTradeType(TradeType.EXACT_OUTPUT, etherIn, etherOut), maxHops.toString());
+    var exactInBribe = calculateMinerBribe(gasPriceToBeat, exactInGas, minerBribeMargin);
+    var exactOutBribe = calculateMinerBribe(gasPriceToBeat, exactOutGas, minerBribeMargin);
+    var chainId = currencyIn.chainId || currencyOut.chainId || undefined;
+    !chainId ? process.env.NODE_ENV !== "production" ? invariant(false, 'BRIBE_ESTIMATES_CHAINID') : invariant(false) : void 0;
+    var amountOut = wrappedAmount(CurrencyAmount.ether(exactInBribe), chainId);
+
+    if (etherIn) {
+      amountOut = wrappedAmount(CurrencyAmount.ether(exactOutBribe), chainId);
+    }
+
+    var minTokenAmountIn;
+    var minTokenAmountOut;
+
+    for (var i = 0; i < pairs.length; i++) {
+      var pair = pairs[i]; // pair irrelevant
+
+      if (!pair.token0.equals(amountOut.token) && !pair.token1.equals(amountOut.token)) continue;
+      if (pair.reserve0.equalTo(ZERO) || pair.reserve1.equalTo(ZERO)) continue;
+
+      try {
+        if (etherIn) {
+          minTokenAmountIn = CurrencyAmount.ether(exactInBribe);
+
+          var _pair$getInputAmount3 = pair.getInputAmount(amountOut, Exchange.UNI);
+
+          minTokenAmountOut = _pair$getInputAmount3[0];
+        } else if (etherOut) {
+          minTokenAmountOut = CurrencyAmount.ether(exactInBribe);
+
+          var _pair$getInputAmount4 = pair.getInputAmount(amountOut, Exchange.UNI);
+
+          minTokenAmountIn = _pair$getInputAmount4[0];
+        }
+      } catch (error) {
+        // input too low
+        if (error.isInsufficientInputAmountError) {
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    if (!minTokenAmountIn || !minTokenAmountOut) return null;
+    return _ref4 = {}, _ref4[TradeType.EXACT_INPUT] = minTokenAmountIn, _ref4[TradeType.EXACT_OUTPUT] = minTokenAmountOut, _ref4;
   };
 
   return Trade;

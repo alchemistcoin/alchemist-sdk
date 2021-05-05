@@ -195,7 +195,7 @@ export class Trade {
         // the input reduced by the minerBribe
         if (etherIn && i === 0){
           // reduce the inputAmount by this.minerBribe
-          invariant(inputAmount.greaterThan(this.minerBribe), `Miner bribe is greater than input ETH`)
+          invariant(inputAmount.greaterThan(this.minerBribe), `Miner bribe ${this.minerBribe.toExact()} is greater than input ETH ${inputAmount.toExact()}`)
           const modifiedAmount = inputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId))
           // console.log('original amount in', inputAmount.toExact())
           // console.log('modified amount in', modifiedAmount.toExact())
@@ -210,7 +210,7 @@ export class Trade {
         // by the miner bribe
         if (etherOut && i === route.path.length - 2){
           // reduce the outputAmount by this.minerBribe
-          invariant(outputAmount.greaterThan(this.minerBribe), `Miner bribe is greater than output ETH`)
+          invariant(outputAmount.greaterThan(this.minerBribe), `Miner bribe ${this.minerBribe.toExact()} is greater than output ETH ${outputAmount.toExact()}`)
           const modifiedAmount = outputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId))
           // console.log('original amount out', outputAmount.toExact())
           // console.log('modified amount out', modifiedAmount.toExact())
@@ -581,7 +581,7 @@ export class Trade {
 
   /**
    * return the mistX router method name for the trade
-   * @param tradeType the type of trade, TradeType
+   * @param pairs
    * @param etherIn the input currency is ether
    * @param etherOut the output currency is ether
    * @param useFeeOnTransfer Whether any of the tokens in the path are fee on transfer tokens, TradeOptions.feeOnTransfer
@@ -594,31 +594,24 @@ export class Trade {
     gasPriceToBeat: BigintIsh,
     minerBribeMargin: BigintIsh,
     { maxHops = 3 }: BestTradeOptions = {}
-  ): BribeEstimation | undefined {
+  ): BribeEstimation | null {
     const etherIn = currencyIn === ETHER
     const etherOut = currencyOut === ETHER
 
-    const exactInGas = estimatedGasForMethod(Trade.methodNameForTradeType(TradeType.EXACT_INPUT, etherIn, etherOut), maxHops.toString())j
+    if (!etherIn && !etherOut) return null;
+
+    const exactInGas = estimatedGasForMethod(Trade.methodNameForTradeType(TradeType.EXACT_INPUT, etherIn, etherOut), maxHops.toString())
     const exactOutGas = estimatedGasForMethod(Trade.methodNameForTradeType(TradeType.EXACT_OUTPUT, etherIn, etherOut), maxHops.toString())
 
     const exactInBribe = calculateMinerBribe(gasPriceToBeat, exactInGas, minerBribeMargin)
     const exactOutBribe = calculateMinerBribe(gasPriceToBeat, exactOutGas, minerBribeMargin)
-    
-    
 
-    
     const chainId: ChainId | undefined = (currencyIn as Token).chainId || (currencyOut as Token).chainId || undefined
-    let amountOut0: TokenAmount = wrappedAmount(CurrencyAmount.ether(exactInBribe), chainId)
-    let amountOut1: TokenAmount = wrappedAmount(CurrencyAmount.ether(exactOutBribe), chainId)
     invariant(chainId, 'BRIBE_ESTIMATES_CHAINID')
+    let amountOut: TokenAmount = wrappedAmount(CurrencyAmount.ether(exactInBribe), chainId)
     if (etherIn){
-      amountOut0 = wrappedAmount(CurrencyAmount.ether(exactOutBribe), chainId)
-    } else if (etherOut){
-      amountOut0 = wrappedAmount(CurrencyAmount.ether(exactInBribe), chainId)
-    }
-    const wrappedEther = wrappedCurrency(ETHER, chainId)
-    const exactInToken = wrappedCurrency(currencyIn, chainId)
-    const exactOutToken = wrappedCurrency(currencyOut, chainId)
+      amountOut = wrappedAmount(CurrencyAmount.ether(exactOutBribe), chainId)
+    } 
 
     let minTokenAmountIn: CurrencyAmount | TokenAmount | undefined
     let minTokenAmountOut: CurrencyAmount | TokenAmount | undefined
@@ -626,31 +619,17 @@ export class Trade {
     for (let i = 0; i < pairs.length; i++){
       const pair = pairs[i]
       // pair irrelevant
-      if (etherIn || etherOut) {
-        if (!pair.token0.equals(exactInToken) && !pair.token1.equals(exactOutToken)) continue
-      } else {
-        if (!pair.token0.equals(exactInToken) &&  !pair.token0.equals(exactOutToken) && !pair.token0.equals(wrappedEther)) continue
-        if (!pair.token1.equals(exactInToken) &&  !pair.token1.equals(exactOutToken) && !pair.token1.equals(wrappedEther)) continue
-      }
+      if (!pair.token0.equals(amountOut.token) && !pair.token1.equals(amountOut.token)) continue 
       if (pair.reserve0.equalTo(ZERO) || pair.reserve1.equalTo(ZERO)) continue
 
-      
       try {
         if (etherIn){
           minTokenAmountIn = CurrencyAmount.ether(exactInBribe)
-          ;[minTokenAmountOut] = pair.getInputAmount(amountOut0, Exchange.UNI)
+          ;[minTokenAmountOut] = pair.getInputAmount(amountOut, Exchange.UNI)
         } else if (etherOut) {
           minTokenAmountOut = CurrencyAmount.ether(exactInBribe)
-          ;[minTokenAmountIn] = pair.getInputAmount(amountOut0, Exchange.UNI)
-        } else {
-          if (pair.token0.equals(exactInToken) || pair.token1.equals(exactInToken)) {
-            ;[minTokenAmountIn] = pair.getInputAmount(amountOut0, Exchange.UNI)
-          }
-          if (pair.token0.equals(exactOutToken) || pair.token1.equals(exactOutToken)) {
-            ;[minTokenAmountOut] = pair.getInputAmount(amountOut1, Exchange.UNI)
-          }
-        }
-        
+          ;[minTokenAmountIn] = pair.getInputAmount(amountOut, Exchange.UNI)
+        } 
       } catch (error) {
         // input too low
         if (error.isInsufficientInputAmountError) {
@@ -660,7 +639,7 @@ export class Trade {
       }
     }
 
-    if (!minTokenAmountIn || !minTokenAmountOut) return undefined;
+    if (!minTokenAmountIn || !minTokenAmountOut) return null;
 
     return {
       [TradeType.EXACT_INPUT]: minTokenAmountIn,
