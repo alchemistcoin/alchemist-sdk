@@ -25,10 +25,12 @@ function computePriceImpact(midPrice: Price, inputAmount: CurrencyAmount, output
   return new Percent(slippage.numerator, slippage.denominator)
 }
 
+export type BribeEstimation = {[tradeType in TradeType]: CurrencyAmount}
+
 // minimal interface so the input output comparator may be shared across types
 interface InputOutput {
-  readonly inputAmount: CurrencyAmount
-  readonly outputAmount: CurrencyAmount
+  readonly inputAmount: CurrencyAmount | TokenAmount
+  readonly outputAmount: CurrencyAmount | TokenAmount
 }
 
 // comparator function that allows sorting trades by their output amounts, in decreasing order, and then input amounts
@@ -576,4 +578,96 @@ export class Trade {
     }
     return methodName
   }
+
+  /**
+   * return the mistX router method name for the trade
+   * @param tradeType the type of trade, TradeType
+   * @param etherIn the input currency is ether
+   * @param etherOut the output currency is ether
+   * @param useFeeOnTransfer Whether any of the tokens in the path are fee on transfer tokens, TradeOptions.feeOnTransfer
+   * @param enforceUseFeeOnTransfer use to throw an invariant if there is no useFeeOnTransfer option for TradeType.EXACT_OUTPUT trades
+   */
+   public static estimateBribes(
+    pairs: Pair[],
+    currencyIn: Currency,
+    currencyOut: Currency, 
+    gasPriceToBeat: BigintIsh,
+    minerBribeMargin: BigintIsh,
+    { maxHops = 3 }: BestTradeOptions = {}
+  ): BribeEstimation | undefined {
+    const etherIn = currencyIn === ETHER
+    const etherOut = currencyOut === ETHER
+
+    const exactInGas = estimatedGasForMethod(Trade.methodNameForTradeType(TradeType.EXACT_INPUT, etherIn, etherOut), maxHops.toString())j
+    const exactOutGas = estimatedGasForMethod(Trade.methodNameForTradeType(TradeType.EXACT_OUTPUT, etherIn, etherOut), maxHops.toString())
+
+    const exactInBribe = calculateMinerBribe(gasPriceToBeat, exactInGas, minerBribeMargin)
+    const exactOutBribe = calculateMinerBribe(gasPriceToBeat, exactOutGas, minerBribeMargin)
+    
+    
+
+    
+    const chainId: ChainId | undefined = (currencyIn as Token).chainId || (currencyOut as Token).chainId || undefined
+    let amountOut0: TokenAmount = wrappedAmount(CurrencyAmount.ether(exactInBribe), chainId)
+    let amountOut1: TokenAmount = wrappedAmount(CurrencyAmount.ether(exactOutBribe), chainId)
+    invariant(chainId, 'BRIBE_ESTIMATES_CHAINID')
+    if (etherIn){
+      amountOut0 = wrappedAmount(CurrencyAmount.ether(exactOutBribe), chainId)
+    } else if (etherOut){
+      amountOut0 = wrappedAmount(CurrencyAmount.ether(exactInBribe), chainId)
+    }
+    const wrappedEther = wrappedCurrency(ETHER, chainId)
+    const exactInToken = wrappedCurrency(currencyIn, chainId)
+    const exactOutToken = wrappedCurrency(currencyOut, chainId)
+
+    let minTokenAmountIn: CurrencyAmount | TokenAmount | undefined
+    let minTokenAmountOut: CurrencyAmount | TokenAmount | undefined
+
+    for (let i = 0; i < pairs.length; i++){
+      const pair = pairs[i]
+      // pair irrelevant
+      if (etherIn || etherOut) {
+        if (!pair.token0.equals(exactInToken) && !pair.token1.equals(exactOutToken)) continue
+      } else {
+        if (!pair.token0.equals(exactInToken) &&  !pair.token0.equals(exactOutToken) && !pair.token0.equals(wrappedEther)) continue
+        if (!pair.token1.equals(exactInToken) &&  !pair.token1.equals(exactOutToken) && !pair.token1.equals(wrappedEther)) continue
+      }
+      if (pair.reserve0.equalTo(ZERO) || pair.reserve1.equalTo(ZERO)) continue
+
+      
+      try {
+        if (etherIn){
+          minTokenAmountIn = CurrencyAmount.ether(exactInBribe)
+          ;[minTokenAmountOut] = pair.getInputAmount(amountOut0, Exchange.UNI)
+        } else if (etherOut) {
+          minTokenAmountOut = CurrencyAmount.ether(exactInBribe)
+          ;[minTokenAmountIn] = pair.getInputAmount(amountOut0, Exchange.UNI)
+        } else {
+          if (pair.token0.equals(exactInToken) || pair.token1.equals(exactInToken)) {
+            ;[minTokenAmountIn] = pair.getInputAmount(amountOut0, Exchange.UNI)
+          }
+          if (pair.token0.equals(exactOutToken) || pair.token1.equals(exactOutToken)) {
+            ;[minTokenAmountOut] = pair.getInputAmount(amountOut1, Exchange.UNI)
+          }
+        }
+        
+      } catch (error) {
+        // input too low
+        if (error.isInsufficientInputAmountError) {
+          continue
+        }
+        throw error
+      }
+    }
+
+    if (!minTokenAmountIn || !minTokenAmountOut) return undefined;
+
+    return {
+      [TradeType.EXACT_INPUT]: minTokenAmountIn,
+      [TradeType.EXACT_OUTPUT]: minTokenAmountOut
+    }
+
+  }
+
+  
 }
