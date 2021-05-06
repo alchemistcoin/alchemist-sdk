@@ -42,7 +42,6 @@ describe('Trade', () => {
       new Route([pair_weth_0], ETHER),
       CurrencyAmount.ether(JSBI.BigInt(100)),
       TradeType.EXACT_INPUT,
-      Exchange.UNI,
       gas_price_to_beat,
       miner_bribe_margin
     )
@@ -54,7 +53,6 @@ describe('Trade', () => {
       new Route([pair_weth_0], ETHER, token0),
       new TokenAmount(token0, JSBI.BigInt(100)),
       TradeType.EXACT_OUTPUT,
-      Exchange.UNI,
       gas_price_to_beat,
       miner_bribe_margin
     )
@@ -67,7 +65,6 @@ describe('Trade', () => {
       new Route([pair_weth_0], token0, ETHER),
       CurrencyAmount.ether(JSBI.BigInt(100)),
       TradeType.EXACT_OUTPUT,
-      Exchange.UNI,
       gas_price_to_beat,
       miner_bribe_margin
     )
@@ -79,7 +76,6 @@ describe('Trade', () => {
       new Route([pair_weth_0], token0, ETHER),
       new TokenAmount(token0, JSBI.BigInt(100)),
       TradeType.EXACT_INPUT,
-      Exchange.UNI,
       gas_price_to_beat,
       miner_bribe_margin
     )
@@ -89,12 +85,12 @@ describe('Trade', () => {
 
   describe('#bestTradeExactIn', () => {
     it('throws with empty pairs', () => {
-      expect(() => Trade.bestTradeExactIn([], Exchange.UNI, new TokenAmount(token0, JSBI.BigInt(100)), token2, gas_price_to_beat,
+      expect(() => Trade.bestTradeExactIn([], new TokenAmount(token0, JSBI.BigInt(100)), token2, gas_price_to_beat,
       miner_bribe_margin)).toThrow('PAIRS')
     })
     it('throws with max hops of 0', () => {
       expect(() =>
-        Trade.bestTradeExactIn([pair_0_2], Exchange.UNI, new TokenAmount(token0, JSBI.BigInt(100)), token2, gas_price_to_beat,
+        Trade.bestTradeExactIn([pair_0_2], new TokenAmount(token0, JSBI.BigInt(100)), token2, gas_price_to_beat,
         miner_bribe_margin, { maxHops: 0 })
       ).toThrow('MAX_HOPS')
     })
@@ -102,7 +98,6 @@ describe('Trade', () => {
     it('provides best route', () => {
       const result = Trade.bestTradeExactIn(
         [pair_0_1, pair_0_2, pair_1_2],
-        Exchange.UNI,
         new TokenAmount(token0, JSBI.BigInt(100)),
         token2,
         gas_price_to_beat,
@@ -120,7 +115,7 @@ describe('Trade', () => {
     })
 
     it('doesnt throw for zero liquidity pairs', () => {
-      expect(Trade.bestTradeExactIn([empty_pair_0_1], Exchange.UNI, new TokenAmount(token0, JSBI.BigInt(100)), token1, gas_price_to_beat,
+      expect(Trade.bestTradeExactIn([empty_pair_0_1], new TokenAmount(token0, JSBI.BigInt(100)), token1, gas_price_to_beat,
       miner_bribe_margin)).toHaveLength(
         0
       )
@@ -129,7 +124,6 @@ describe('Trade', () => {
     it('respects maxHops', () => {
       const result = Trade.bestTradeExactIn(
         [pair_0_1, pair_0_2, pair_1_2],
-        Exchange.UNI,
         new TokenAmount(token0, JSBI.BigInt(10)),
         token2,
         gas_price_to_beat,
@@ -144,7 +138,6 @@ describe('Trade', () => {
     it('insufficient input for one pair', () => {
       const result = Trade.bestTradeExactIn(
         [pair_0_1, pair_0_2, pair_1_2],
-        Exchange.UNI,
         new TokenAmount(token0, JSBI.BigInt(1)),
         token2,
         gas_price_to_beat,
@@ -159,7 +152,6 @@ describe('Trade', () => {
     it('respects n', () => {
       const result = Trade.bestTradeExactIn(
         [pair_0_1, pair_0_2, pair_1_2],
-        Exchange.UNI,
         new TokenAmount(token0, JSBI.BigInt(10)),
         token2,
         gas_price_to_beat,
@@ -173,7 +165,6 @@ describe('Trade', () => {
     it('no path', () => {
       const result = Trade.bestTradeExactIn(
         [pair_0_1, pair_0_3, pair_1_3],
-        Exchange.UNI,
         new TokenAmount(token0, JSBI.BigInt(10)),
         token2,
         gas_price_to_beat,
@@ -185,7 +176,6 @@ describe('Trade', () => {
     it('works for ETHER currency input', () => {
       const result = Trade.bestTradeExactIn(
         [pair_weth_0, pair_0_1, pair_0_3, pair_1_3],
-        Exchange.UNI,
         CurrencyAmount.ether(JSBI.BigInt(100)),
         token3,
         gas_price_to_beat,
@@ -202,7 +192,6 @@ describe('Trade', () => {
     it('works for ETHER currency output', () => {
       const result = Trade.bestTradeExactIn(
         [pair_weth_0, pair_0_1, pair_0_3, pair_1_3],
-        Exchange.UNI,
         new TokenAmount(token3, JSBI.BigInt(100)),
         ETHER,
         gas_price_to_beat,
@@ -224,7 +213,6 @@ describe('Trade', () => {
         new Route([pair_0_1, pair_1_2], token0),
         new TokenAmount(token0, JSBI.BigInt(100)),
         TradeType.EXACT_INPUT,
-        Exchange.UNI,
         gas_price_to_beat,
         miner_bribe_margin
       )
@@ -253,7 +241,6 @@ describe('Trade', () => {
         new Route([pair_0_1, pair_1_2], token0),
         new TokenAmount(token2, JSBI.BigInt(100)),
         TradeType.EXACT_OUTPUT,
-        Exchange.UNI,
         gas_price_to_beat,
         miner_bribe_margin
       )
@@ -286,7 +273,6 @@ describe('Trade', () => {
         new Route([pair_0_1, pair_1_2], token0),
         new TokenAmount(token0, JSBI.BigInt(100)),
         TradeType.EXACT_INPUT,
-        Exchange.UNI,
         gas_price_to_beat,
         miner_bribe_margin
       )
@@ -315,7 +301,6 @@ describe('Trade', () => {
         new Route([pair_0_1, pair_1_2], token0),
         new TokenAmount(token2, JSBI.BigInt(100)),
         TradeType.EXACT_OUTPUT,
-        Exchange.UNI,
         gas_price_to_beat,
         miner_bribe_margin
       )
@@ -344,12 +329,12 @@ describe('Trade', () => {
 
   describe('#bestTradeExactOut', () => {
     it('throws with empty pairs', () => {
-      expect(() => Trade.bestTradeExactOut([], Exchange.UNI, token0, new TokenAmount(token2, JSBI.BigInt(100)),gas_price_to_beat,
+      expect(() => Trade.bestTradeExactOut([], token0, new TokenAmount(token2, JSBI.BigInt(100)),gas_price_to_beat,
       miner_bribe_margin)).toThrow('PAIRS')
     })
     it('throws with max hops of 0', () => {
       expect(() =>
-        Trade.bestTradeExactOut([pair_0_2], Exchange.UNI, token0, new TokenAmount(token2, JSBI.BigInt(100)), gas_price_to_beat,
+        Trade.bestTradeExactOut([pair_0_2], token0, new TokenAmount(token2, JSBI.BigInt(100)), gas_price_to_beat,
         miner_bribe_margin, { maxHops: 0 })
       ).toThrow('MAX_HOPS')
     })
@@ -357,7 +342,6 @@ describe('Trade', () => {
     it('provides best route', () => {
       const result = Trade.bestTradeExactOut(
         [pair_0_1, pair_0_2, pair_1_2],
-        Exchange.UNI,
         token0,
         new TokenAmount(token2, JSBI.BigInt(100)),
         gas_price_to_beat,
@@ -375,7 +359,7 @@ describe('Trade', () => {
     })
 
     it('doesnt throw for zero liquidity pairs', () => {
-      expect(Trade.bestTradeExactOut([empty_pair_0_1], Exchange.UNI, token1, new TokenAmount(token1, JSBI.BigInt(100)),gas_price_to_beat,
+      expect(Trade.bestTradeExactOut([empty_pair_0_1], token1, new TokenAmount(token1, JSBI.BigInt(100)),gas_price_to_beat,
       miner_bribe_margin)).toHaveLength(
         0
       )
@@ -384,7 +368,6 @@ describe('Trade', () => {
     it('respects maxHops', () => {
       const result = Trade.bestTradeExactOut(
         [pair_0_1, pair_0_2, pair_1_2],
-        Exchange.UNI,
         token0,
         new TokenAmount(token2, JSBI.BigInt(10)),
         gas_price_to_beat,
@@ -399,7 +382,6 @@ describe('Trade', () => {
     it('insufficient liquidity', () => {
       const result = Trade.bestTradeExactOut(
         [pair_0_1, pair_0_2, pair_1_2],
-        Exchange.UNI,
         token0,
         new TokenAmount(token2, JSBI.BigInt(1200)),
         gas_price_to_beat,
@@ -411,7 +393,6 @@ describe('Trade', () => {
     it('insufficient liquidity in one pair but not the other', () => {
       const result = Trade.bestTradeExactOut(
         [pair_0_1, pair_0_2, pair_1_2],
-        Exchange.UNI,
         token0,
         new TokenAmount(token2, JSBI.BigInt(1050)),
         gas_price_to_beat,
@@ -423,7 +404,6 @@ describe('Trade', () => {
     it('respects n', () => {
       const result = Trade.bestTradeExactOut(
         [pair_0_1, pair_0_2, pair_1_2],
-        Exchange.UNI,
         token0,
         new TokenAmount(token2, JSBI.BigInt(10)),
         gas_price_to_beat,
@@ -437,7 +417,6 @@ describe('Trade', () => {
     it('no path', () => {
       const result = Trade.bestTradeExactOut(
         [pair_0_1, pair_0_3, pair_1_3],
-        Exchange.UNI,
         token0,
         new TokenAmount(token2, JSBI.BigInt(10)),
         gas_price_to_beat,
@@ -449,7 +428,6 @@ describe('Trade', () => {
     it('works for ETHER currency input', () => {
       const result = Trade.bestTradeExactOut(
         [pair_weth_0, pair_0_1, pair_0_3, pair_1_3],
-        Exchange.UNI,
         ETHER,
         new TokenAmount(token3, JSBI.BigInt(100)),
         gas_price_to_beat,
@@ -466,7 +444,6 @@ describe('Trade', () => {
     it('works for ETHER currency output', () => {
       const result = Trade.bestTradeExactOut(
         [pair_weth_0, pair_0_1, pair_0_3, pair_1_3],
-        Exchange.UNI,
         token3,
         CurrencyAmount.ether(JSBI.BigInt(100)),
         gas_price_to_beat,
