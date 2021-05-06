@@ -29,8 +29,8 @@ export type MinTradeEstimate = {[tradeType in TradeType]: CurrencyAmount}
 
 // minimal interface so the input output comparator may be shared across types
 interface InputOutput {
-  readonly inputAmount: CurrencyAmount | TokenAmount
-  readonly outputAmount: CurrencyAmount | TokenAmount
+  readonly inputAmount: CurrencyAmount
+  readonly outputAmount: CurrencyAmount
 }
 
 // comparator function that allows sorting trades by their output amounts, in decreasing order, and then input amounts

@@ -3,15 +3,14 @@ import { Currency } from './currency';
 import { CurrencyAmount } from './fractions/currencyAmount';
 import { Percent } from './fractions/percent';
 import { Price } from './fractions/price';
-import { TokenAmount } from './fractions/tokenAmount';
 import { Pair } from './pair';
 import { Route } from './route';
 export declare type MinTradeEstimate = {
     [tradeType in TradeType]: CurrencyAmount;
 };
 interface InputOutput {
-    readonly inputAmount: CurrencyAmount | TokenAmount;
-    readonly outputAmount: CurrencyAmount | TokenAmount;
+    readonly inputAmount: CurrencyAmount;
+    readonly outputAmount: CurrencyAmount;
 }
 export declare function inputOutputComparator(a: InputOutput, b: InputOutput): number;
 export declare function tradeComparator(a: Trade, b: Trade): number;
