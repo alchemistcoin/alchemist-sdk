@@ -6,6 +6,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var JSBI = _interopDefault(require('jsbi'));
 var invariant = _interopDefault(require('tiny-invariant'));
+var warning = _interopDefault(require('tiny-warning'));
 var address = require('@ethersproject/address');
 var _Big = _interopDefault(require('big.js'));
 var toFormat = _interopDefault(require('toformat'));
@@ -299,9 +300,9 @@ function validateSolidityTypeInstance(value, solidityType) {
 
 function validateAndParseAddress(address$1) {
   try {
-    var checksummedAddress = address.getAddress(address$1); // this needs to be uncommented before prod MVP
-    // warning(address === checksummedAddress, `${address} is not checksummed.`)
+    var checksummedAddress = address.getAddress(address$1); //console.log('checksum', checksummedAddress, address)
 
+    "development" !== "production" ? warning(address$1 === checksummedAddress, address$1 + " is not checksummed.") : void 0;
     return checksummedAddress;
   } catch (error) {
       invariant(false, address$1 + " is not a valid address.")  ;
@@ -1743,16 +1744,16 @@ var Fetcher = /*#__PURE__*/function () {
    */
   ;
 
-  Fetcher.fetchPairData = function fetchPairData(tokenA, tokenB, provider) {
+  Fetcher.fetchPairData = function fetchPairData(tokenA, tokenB, exchange, provider) {
     try {
       if (provider === undefined) provider = providers.getDefaultProvider(networks.getNetwork(tokenA.chainId));
       !(tokenA.chainId === tokenB.chainId) ? "development" !== "production" ? invariant(false, 'CHAIN_ID') : invariant(false) : void 0;
-      var address = Pair.getAddress(tokenA, tokenB);
+      var address = Pair.getAddress(tokenA, tokenB, exchange);
       return Promise.resolve(new contracts.Contract(address, IUniswapV2Pair.abi, provider).getReserves()).then(function (_ref) {
         var reserves0 = _ref[0],
             reserves1 = _ref[1];
         var balances = tokenA.sortsBefore(tokenB) ? [reserves0, reserves1] : [reserves1, reserves0];
-        return new Pair(new TokenAmount(tokenA, balances[0]), new TokenAmount(tokenB, balances[1]));
+        return new Pair(new TokenAmount(tokenA, balances[0]), new TokenAmount(tokenB, balances[1]), exchange);
       });
     } catch (e) {
       return Promise.reject(e);

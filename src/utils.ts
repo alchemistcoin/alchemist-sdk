@@ -1,5 +1,5 @@
 import invariant from 'tiny-invariant'
-// import warning from 'tiny-warning'
+import warning from 'tiny-warning'
 import JSBI from 'jsbi'
 import { getAddress } from '@ethersproject/address'
 
@@ -14,8 +14,8 @@ export function validateSolidityTypeInstance(value: JSBI, solidityType: Solidity
 export function validateAndParseAddress(address: string): string {
   try {
     const checksummedAddress = getAddress(address)
-    // this needs to be uncommented before prod MVP
-    // warning(address === checksummedAddress, `${address} is not checksummed.`)
+    //console.log('checksum', checksummedAddress, address)
+    warning(address === checksummedAddress, `${address} is not checksummed.`)
     return checksummedAddress
   } catch (error) {
     invariant(false, `${address} is not a valid address.`)
@@ -26,15 +26,15 @@ export function parseBigintIsh(bigintIsh: BigintIsh): JSBI {
   return bigintIsh instanceof JSBI
     ? bigintIsh
     : typeof bigintIsh === 'bigint'
-    ? JSBI.BigInt(bigintIsh.toString())
-    : JSBI.BigInt(bigintIsh)
+      ? JSBI.BigInt(bigintIsh.toString())
+      : JSBI.BigInt(bigintIsh)
 }
 
 export function estimatedGasForMethod(methodName: string = 'swapTokensForExactETH', numHops: BigintIsh = '1'): JSBI {
   const gasBeforeHopFactor: BigintIsh = parseBigintIsh(GAS_ESTIMATES[methodName])
   const factor = parseBigintIsh('0') // TODO: change this
-  const additionalGas = JSBI.multiply(parseBigintIsh(numHops),factor)
-  return JSBI.add(gasBeforeHopFactor,additionalGas)
+  const additionalGas = JSBI.multiply(parseBigintIsh(numHops), factor)
+  return JSBI.add(gasBeforeHopFactor, additionalGas)
 }
 
 export function calculateMinerBribe(gasPriceToBeat: BigintIsh, estimatedGas: BigintIsh, margin: BigintIsh): JSBI {
@@ -50,7 +50,7 @@ export function calculateMargin(value: BigintIsh, margin: BigintIsh): JSBI {
   margin = JSBI.multiply(parseBigintIsh(margin), parseBigintIsh('100'))
   const numerator = JSBI.multiply(value, JSBI.add(parseBigintIsh('10000'), margin))
   const denominator = parseBigintIsh('10000')
-  return JSBI.divide(numerator,denominator)
+  return JSBI.divide(numerator, denominator)
 }
 
 // mock the on-chain sqrt function
