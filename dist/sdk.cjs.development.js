@@ -860,7 +860,7 @@ var Pair = /*#__PURE__*/function () {
     return token.equals(this.token0) ? this.reserve0 : this.reserve1;
   };
 
-  _proto.getOutputAmount = function getOutputAmount(inputAmount, exchange) {
+  _proto.getOutputAmount = function getOutputAmount(inputAmount) {
     !this.involvesToken(inputAmount.token) ?  invariant(false, 'TOKEN')  : void 0;
 
     if (JSBI.equal(this.reserve0.raw, ZERO) || JSBI.equal(this.reserve1.raw, ZERO)) {
@@ -878,10 +878,10 @@ var Pair = /*#__PURE__*/function () {
       throw new InsufficientInputAmountError();
     }
 
-    return [outputAmount, new Pair(inputReserve.add(inputAmount), outputReserve.subtract(outputAmount), exchange)];
+    return [outputAmount, new Pair(inputReserve.add(inputAmount), outputReserve.subtract(outputAmount), this.exchange)];
   };
 
-  _proto.getInputAmount = function getInputAmount(outputAmount, exchange) {
+  _proto.getInputAmount = function getInputAmount(outputAmount) {
     !this.involvesToken(outputAmount.token) ?  invariant(false, 'TOKEN')  : void 0;
 
     if (JSBI.equal(this.reserve0.raw, ZERO) || JSBI.equal(this.reserve1.raw, ZERO) || JSBI.greaterThanOrEqual(outputAmount.raw, this.reserveOf(outputAmount.token).raw)) {
@@ -893,7 +893,7 @@ var Pair = /*#__PURE__*/function () {
     var numerator = JSBI.multiply(JSBI.multiply(inputReserve.raw, outputAmount.raw), _1000);
     var denominator = JSBI.multiply(JSBI.subtract(outputReserve.raw, outputAmount.raw), _997);
     var inputAmount = new TokenAmount(outputAmount.token.equals(this.token0) ? this.token1 : this.token0, JSBI.add(JSBI.divide(numerator, denominator), ONE));
-    return [inputAmount, new Pair(inputReserve.add(inputAmount), outputReserve.subtract(outputAmount), exchange)];
+    return [inputAmount, new Pair(inputReserve.add(inputAmount), outputReserve.subtract(outputAmount), this.exchange)];
   };
 
   _proto.getLiquidityMinted = function getLiquidityMinted(totalSupply, tokenAmountA, tokenAmountB) {
@@ -1151,7 +1151,7 @@ function wrappedCurrency(currency, chainId) {
 
 
 var Trade = /*#__PURE__*/function () {
-  function Trade(route, amount, tradeType, exchange, gasPriceToBeat, minerBribeMargin) {
+  function Trade(route, amount, tradeType, gasPriceToBeat, minerBribeMargin) {
     var amounts = new Array(route.path.length);
     var nextPairs = new Array(route.pairs.length);
     var etherIn = route.input === ETHER;
@@ -1185,7 +1185,7 @@ var Trade = /*#__PURE__*/function () {
           modifiedInput = inputAmount;
         }
 
-        var _pair$getOutputAmount = pair.getOutputAmount(inputAmount, exchange),
+        var _pair$getOutputAmount = pair.getOutputAmount(inputAmount),
             outputAmount = _pair$getOutputAmount[0],
             nextPair = _pair$getOutputAmount[1]; // if the output is ETH, reduce the output amount
         // by the miner bribe
@@ -1232,7 +1232,7 @@ var Trade = /*#__PURE__*/function () {
 
         var _pair = route.pairs[_i - 1];
 
-        var _pair$getInputAmount = _pair.getInputAmount(_outputAmount, exchange),
+        var _pair$getInputAmount = _pair.getInputAmount(_outputAmount),
             _inputAmount = _pair$getInputAmount[0],
             _nextPair = _pair$getInputAmount[1]; // if the input is ETH, increase the input amount
         // by the miner bribe
@@ -1257,7 +1257,7 @@ var Trade = /*#__PURE__*/function () {
       }
     }
 
-    this.exchange = exchange;
+    this.exchange = route.pairs[0].exchange;
     this.route = route;
     this.tradeType = tradeType;
     this.inputAmount = tradeType === exports.TradeType.EXACT_INPUT ? amount : route.input === ETHER ? CurrencyAmount.ether(amounts[0].raw) : amounts[0];
@@ -1286,8 +1286,8 @@ var Trade = /*#__PURE__*/function () {
    */
 
 
-  Trade.exactIn = function exactIn(route, amountIn, exchange, gasPriceToBeat, minerBribeMargin) {
-    return new Trade(route, amountIn, exports.TradeType.EXACT_INPUT, exchange, gasPriceToBeat, minerBribeMargin);
+  Trade.exactIn = function exactIn(route, amountIn, gasPriceToBeat, minerBribeMargin) {
+    return new Trade(route, amountIn, exports.TradeType.EXACT_INPUT, gasPriceToBeat, minerBribeMargin);
   }
   /**
    * Constructs an exact out trade with the given amount out and route
@@ -1296,8 +1296,8 @@ var Trade = /*#__PURE__*/function () {
    */
   ;
 
-  Trade.exactOut = function exactOut(route, amountOut, exchange, gasPriceToBeat, minerBribeMargin) {
-    return new Trade(route, amountOut, exports.TradeType.EXACT_OUTPUT, exchange, gasPriceToBeat, minerBribeMargin);
+  Trade.exactOut = function exactOut(route, amountOut, gasPriceToBeat, minerBribeMargin) {
+    return new Trade(route, amountOut, exports.TradeType.EXACT_OUTPUT, gasPriceToBeat, minerBribeMargin);
   }
   /**
    * Get the minimum amount that must be received from this trade for the given slippage tolerance
@@ -1352,7 +1352,7 @@ var Trade = /*#__PURE__*/function () {
    */
   ;
 
-  Trade.bestTradeExactIn = function bestTradeExactIn(pairs, exchange, currencyAmountIn, currencyOut, gasPriceToBeat, minerBribeMargin, _temp, // used in recursion.
+  Trade.bestTradeExactIn = function bestTradeExactIn(pairs, currencyAmountIn, currencyOut, gasPriceToBeat, minerBribeMargin, _temp, // used in recursion.
   currentPairs, originalAmountIn, bestTrades) {
     var _ref = _temp === void 0 ? {} : _temp,
         _ref$maxNumResults = _ref.maxNumResults,
@@ -1391,7 +1391,7 @@ var Trade = /*#__PURE__*/function () {
       try {
         ;
 
-        var _pair$getOutputAmount2 = pair.getOutputAmount(amountIn, exchange);
+        var _pair$getOutputAmount2 = pair.getOutputAmount(amountIn);
 
         amountOut = _pair$getOutputAmount2[0];
       } catch (error) {
@@ -1405,11 +1405,11 @@ var Trade = /*#__PURE__*/function () {
 
 
       if (amountOut.token.equals(tokenOut)) {
-        sortedInsert(bestTrades, new Trade(new Route([].concat(currentPairs, [pair]), originalAmountIn.currency, currencyOut), originalAmountIn, tradeType, exchange, gasPriceToBeat, minerBribeMargin), maxNumResults, tradeComparator);
+        sortedInsert(bestTrades, new Trade(new Route([].concat(currentPairs, [pair]), originalAmountIn.currency, currencyOut), originalAmountIn, tradeType, gasPriceToBeat, minerBribeMargin), maxNumResults, tradeComparator);
       } else if (maxHops > 1 && pairs.length > 1) {
         var pairsExcludingThisPair = pairs.slice(0, i).concat(pairs.slice(i + 1, pairs.length)); // otherwise, consider all the other paths that lead from this token as long as we have not exceeded maxHops
 
-        Trade.bestTradeExactIn(pairsExcludingThisPair, exchange, amountOut, currencyOut, gasPriceToBeat, minerBribeMargin, {
+        Trade.bestTradeExactIn(pairsExcludingThisPair, amountOut, currencyOut, gasPriceToBeat, minerBribeMargin, {
           maxNumResults: maxNumResults,
           maxHops: maxHops - 1
         }, [].concat(currentPairs, [pair]), originalAmountIn, bestTrades);
@@ -1438,7 +1438,7 @@ var Trade = /*#__PURE__*/function () {
    */
   ;
 
-  Trade.bestTradeExactOut = function bestTradeExactOut(pairs, exchange, currencyIn, currencyAmountOut, gasPriceToBeat, minerBribeMargin, _temp2, // used in recursion.
+  Trade.bestTradeExactOut = function bestTradeExactOut(pairs, currencyIn, currencyAmountOut, gasPriceToBeat, minerBribeMargin, _temp2, // used in recursion.
   currentPairs, originalAmountOut, bestTrades) {
     var _ref2 = _temp2 === void 0 ? {} : _temp2,
         _ref2$maxNumResults = _ref2.maxNumResults,
@@ -1476,7 +1476,7 @@ var Trade = /*#__PURE__*/function () {
       try {
         ;
 
-        var _pair$getInputAmount2 = pair.getInputAmount(amountOut, exchange);
+        var _pair$getInputAmount2 = pair.getInputAmount(amountOut);
 
         amountIn = _pair$getInputAmount2[0];
       } catch (error) {
@@ -1490,11 +1490,11 @@ var Trade = /*#__PURE__*/function () {
 
 
       if (amountIn.token.equals(tokenIn)) {
-        sortedInsert(bestTrades, new Trade(new Route([pair].concat(currentPairs), currencyIn, originalAmountOut.currency), originalAmountOut, exports.TradeType.EXACT_OUTPUT, exchange, gasPriceToBeat, minerBribeMargin), maxNumResults, tradeComparator);
+        sortedInsert(bestTrades, new Trade(new Route([pair].concat(currentPairs), currencyIn, originalAmountOut.currency), originalAmountOut, exports.TradeType.EXACT_OUTPUT, gasPriceToBeat, minerBribeMargin), maxNumResults, tradeComparator);
       } else if (maxHops > 1 && pairs.length > 1) {
         var pairsExcludingThisPair = pairs.slice(0, i).concat(pairs.slice(i + 1, pairs.length)); // otherwise, consider all the other paths that arrive at this token as long as we have not exceeded maxHops
 
-        Trade.bestTradeExactOut(pairsExcludingThisPair, exchange, currencyIn, amountIn, gasPriceToBeat, minerBribeMargin, {
+        Trade.bestTradeExactOut(pairsExcludingThisPair, currencyIn, amountIn, gasPriceToBeat, minerBribeMargin, {
           maxNumResults: maxNumResults,
           maxHops: maxHops - 1
         }, [pair].concat(currentPairs), originalAmountOut, bestTrades);
@@ -1590,13 +1590,13 @@ var Trade = /*#__PURE__*/function () {
         if (etherIn) {
           minTokenAmountIn = CurrencyAmount.ether(exactInBribe);
 
-          var _pair$getInputAmount3 = pair.getInputAmount(amountOut, exports.Exchange.UNI);
+          var _pair$getInputAmount3 = pair.getInputAmount(amountOut);
 
           minTokenAmountOut = _pair$getInputAmount3[0];
         } else if (etherOut) {
           minTokenAmountOut = CurrencyAmount.ether(exactInBribe);
 
-          var _pair$getInputAmount4 = pair.getInputAmount(amountOut, exports.Exchange.UNI);
+          var _pair$getInputAmount4 = pair.getInputAmount(amountOut);
 
           minTokenAmountIn = _pair$getInputAmount4[0];
         }
