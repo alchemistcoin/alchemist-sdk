@@ -215,7 +215,7 @@ export class Trade {
           // console.log('original amount out', outputAmount.toExact())
           // console.log('modified amount out', modifiedAmount.toExact())
           amounts[i + 1] = modifiedAmount
-          modifiedOutput = modifiedAmount
+          modifiedOutput = outputAmount
         } else if (i === route.path.length - 2){
           modifiedOutput = outputAmount
           amounts[i + 1] = outputAmount
@@ -254,7 +254,7 @@ export class Trade {
           // console.log('original amount in', inputAmount.toExact())
           // console.log('modified amount in', modifiedAmount.toExact())
           amounts[i - 1] = modifiedAmount
-          modifiedInput = modifiedAmount
+          modifiedInput = inputAmount
         } else if (i === 1){
           modifiedInput = inputAmount
           amounts[i - 1] = modifiedInput
@@ -282,14 +282,15 @@ export class Trade {
           ? CurrencyAmount.ether(amounts[amounts.length - 1].raw)
           : amounts[amounts.length - 1]
     this.executionPrice = new Price(
-      this.inputAmount.currency,
-      this.outputAmount.currency,
-      this.inputAmount.raw,
-      this.outputAmount.raw
+      modifiedInput.currency,
+      modifiedOutput.currency,
+      modifiedInput.raw,
+      modifiedOutput.raw
     )
     this.nextMidPrice = Price.fromRoute(new Route(nextPairs, route.input))
     this.priceImpact = computePriceImpact(route.midPrice, modifiedInput, modifiedOutput)
     
+    // console.log('old price impact', computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount).toSignificant(6))
     // console.log('******************')
     // console.log('*** TRADE START **')
     // console.log('******************')

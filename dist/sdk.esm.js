@@ -1178,9 +1178,9 @@ var Trade = /*#__PURE__*/function () {
         if (etherIn && i === 0) {
           // reduce the inputAmount by this.minerBribe
           !inputAmount.greaterThan(this.minerBribe) ? process.env.NODE_ENV !== "production" ? invariant(false, "Miner bribe " + this.minerBribe.toExact() + " is greater than input ETH " + inputAmount.toExact()) : invariant(false) : void 0;
-          var modifiedAmount = inputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId)); // console.log('original amount in', inputAmount.toExact())
-          // console.log('modified amount in', modifiedAmount.toExact())
-
+          var modifiedAmount = inputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId));
+          console.log('original amount in', inputAmount.toExact());
+          console.log('modified amount in', modifiedAmount.toExact());
           inputAmount = modifiedAmount;
           modifiedInput = modifiedAmount;
         } else if (i === 0) {
@@ -1197,12 +1197,12 @@ var Trade = /*#__PURE__*/function () {
           // reduce the outputAmount by this.minerBribe
           !outputAmount.greaterThan(this.minerBribe) ? process.env.NODE_ENV !== "production" ? invariant(false, "Miner bribe " + this.minerBribe.toExact() + " is greater than output ETH " + outputAmount.toExact()) : invariant(false) : void 0;
 
-          var _modifiedAmount = outputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId)); // console.log('original amount out', outputAmount.toExact())
-          // console.log('modified amount out', modifiedAmount.toExact())
+          var _modifiedAmount = outputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId));
 
-
+          console.log('original amount out', outputAmount.toExact());
+          console.log('modified amount out', _modifiedAmount.toExact());
           amounts[i + 1] = _modifiedAmount;
-          modifiedOutput = _modifiedAmount;
+          modifiedOutput = outputAmount;
         } else if (i === route.path.length - 2) {
           modifiedOutput = outputAmount;
           amounts[i + 1] = outputAmount;
@@ -1220,12 +1220,15 @@ var Trade = /*#__PURE__*/function () {
         var _outputAmount = amounts[_i]; // if the output is ETH, calculate the input amount with the
         // the output increased by the minerBribe
 
+        console.log('etherOut', etherOut);
+        console.log('route length', route.path.length, _i);
+
         if (etherOut && _i === route.path.length - 1) {
           // increase the outputAmount by this.minerBribe
-          var _modifiedAmount2 = _outputAmount.add(wrappedAmount(this.minerBribe, route.chainId)); // console.log('original amount out', outputAmount.toExact())
-          // console.log('modified amount out', modifiedAmount.toExact())
+          var _modifiedAmount2 = _outputAmount.add(wrappedAmount(this.minerBribe, route.chainId));
 
-
+          console.log('original amount out', _outputAmount.toExact());
+          console.log('modified amount out', _modifiedAmount2.toExact());
           _outputAmount = _modifiedAmount2;
           modifiedOutput = _modifiedAmount2;
         } else if (_i === route.path.length - 1) {
@@ -1242,12 +1245,12 @@ var Trade = /*#__PURE__*/function () {
 
         if (etherIn && _i === 1) {
           // increase the input amount by this.minerBribe
-          var _modifiedAmount3 = _inputAmount.add(wrappedAmount(this.minerBribe, route.chainId)); // console.log('original amount in', inputAmount.toExact())
-          // console.log('modified amount in', modifiedAmount.toExact())
+          var _modifiedAmount3 = _inputAmount.add(wrappedAmount(this.minerBribe, route.chainId));
 
-
+          console.log('original amount in', _inputAmount.toExact());
+          console.log('modified amount in', _modifiedAmount3.toExact());
           amounts[_i - 1] = _modifiedAmount3;
-          modifiedInput = _modifiedAmount3;
+          modifiedInput = _inputAmount;
         } else if (_i === 1) {
           modifiedInput = _inputAmount;
           amounts[_i - 1] = modifiedInput;
@@ -1264,9 +1267,10 @@ var Trade = /*#__PURE__*/function () {
     this.tradeType = tradeType;
     this.inputAmount = tradeType === TradeType.EXACT_INPUT ? amount : route.input === ETHER ? CurrencyAmount.ether(amounts[0].raw) : amounts[0];
     this.outputAmount = tradeType === TradeType.EXACT_OUTPUT ? amount : route.output === ETHER ? CurrencyAmount.ether(amounts[amounts.length - 1].raw) : amounts[amounts.length - 1];
-    this.executionPrice = new Price(this.inputAmount.currency, this.outputAmount.currency, this.inputAmount.raw, this.outputAmount.raw);
+    this.executionPrice = new Price(modifiedInput.currency, modifiedOutput.currency, modifiedInput.raw, modifiedOutput.raw);
     this.nextMidPrice = Price.fromRoute(new Route(nextPairs, route.input));
-    this.priceImpact = computePriceImpact(route.midPrice, modifiedInput, modifiedOutput); // console.log('******************')
+    this.priceImpact = computePriceImpact(route.midPrice, modifiedInput, modifiedOutput); // console.log('old price impact', computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount).toSignificant(6))
+    // console.log('******************')
     // console.log('*** TRADE START **')
     // console.log('******************')
     // console.log('inputAmount', this.inputAmount.toSignificant(6))
