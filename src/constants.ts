@@ -32,7 +32,7 @@ export enum Rounding {
 export const FACTORY_ADDRESS: { [exchange in Exchange]: string } = {
   [Exchange.UNI]: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
   [Exchange.SUSHI]: '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac',
-  [Exchange.UNDEFINED]: '0x0',
+  [Exchange.UNDEFINED]: '0x0'
 }
 
 export const ROUTER_ADDRESS: { [exchange in Exchange]: string } = {
@@ -44,7 +44,7 @@ export const ROUTER_ADDRESS: { [exchange in Exchange]: string } = {
 export const INIT_CODE_HASH: { [exchange in Exchange]: string } = {
   [Exchange.UNI]: '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
   [Exchange.SUSHI]: '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303',
-  [Exchange.UNDEFINED]: '0x0',
+  [Exchange.UNDEFINED]: '0x0'
 }
 
 export const MINIMUM_LIQUIDITY = JSBI.BigInt(1000)
@@ -70,7 +70,7 @@ export const SOLIDITY_TYPE_MAXIMA = {
   [SolidityType.uint256]: JSBI.BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
 }
 
-export const GAS_ESTIMATES: {[ methodName: string ]: BigintIsh} = {
+export const GAS_ESTIMATES: { [methodName: string]: BigintIsh } = {
   swapETHForExactTokens: '250000',
   swapExactETHForTokens: '250000',
   swapExactTokensForETH: '250000',

@@ -1,5 +1,5 @@
 describe('Router', () => {
-  it ('test', () => {
+  it('test', () => {
     expect(1).toBe(1)
   })
 })
@@ -22,7 +22,7 @@ describe('Router', () => {
 //   const pair_0_1 = new Pair(new TokenAmount(token0, JSBI.BigInt(1000)), new TokenAmount(token1, JSBI.BigInt(1000)), Exchange.UNI,)
 
 //   const pair_weth_0 = new Pair(new TokenAmount(WETH[ChainId.MAINNET], '1000'), new TokenAmount(token0, '1000'), Exchange.UNI,)
-  
+
 //   const gas_price_to_beat = `0`
 //   const miner_bribe_margin = `0`
 
@@ -100,7 +100,7 @@ describe('Router', () => {
 //         expect(swap.amount1).toEqual('0x64')
 //         expect(swap.path).toEqual([WETH[ChainId.MAINNET].address, token0.address, token1.address])
 //         expect(swap.to).toEqual('0x0000000000000000000000000000000000000004')
-//         expect(result.value).toEqual('0x80')        
+//         expect(result.value).toEqual('0x80')
 //         checkDeadline(swap.deadline)
 //       })
 //       it('token1 to ether', () => {

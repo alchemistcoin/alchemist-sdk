@@ -6,6 +6,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var JSBI = _interopDefault(require('jsbi'));
 var invariant = _interopDefault(require('tiny-invariant'));
+var warning = _interopDefault(require('tiny-warning'));
 var address = require('@ethersproject/address');
 var _Big = _interopDefault(require('big.js'));
 var toFormat = _interopDefault(require('toformat'));
@@ -298,9 +299,9 @@ function validateSolidityTypeInstance(value, solidityType) {
 
 function validateAndParseAddress(address$1) {
   try {
-    var checksummedAddress = address.getAddress(address$1); // this needs to be uncommented before prod MVP
-    // warning(address === checksummedAddress, `${address} is not checksummed.`)
+    var checksummedAddress = address.getAddress(address$1); //console.log('checksum', checksummedAddress, address)
 
+    "development" !== "production" ? warning(address$1 === checksummedAddress, address$1 + " is not checksummed.") : void 0;
     return checksummedAddress;
   } catch (error) {
       invariant(false, address$1 + " is not a valid address.")  ;

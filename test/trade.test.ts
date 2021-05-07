@@ -19,24 +19,49 @@ describe('Trade', () => {
   const token1 = new Token(ChainId.MAINNET, '0x0000000000000000000000000000000000000002', 18, 't1')
   const token2 = new Token(ChainId.MAINNET, '0x0000000000000000000000000000000000000003', 18, 't2')
   const token3 = new Token(ChainId.MAINNET, '0x0000000000000000000000000000000000000004', 18, 't3')
+  const exchange = Exchange.UNI
 
-  const pair_0_1 = new Pair(new TokenAmount(token0, JSBI.BigInt(1000)), new TokenAmount(token1, JSBI.BigInt(1000)), Exchange.UNI)
-  const pair_0_2 = new Pair(new TokenAmount(token0, JSBI.BigInt(1000)), new TokenAmount(token2, JSBI.BigInt(1100)), Exchange.UNI)
-  const pair_0_3 = new Pair(new TokenAmount(token0, JSBI.BigInt(1000)), new TokenAmount(token3, JSBI.BigInt(900)), Exchange.UNI)
-  const pair_1_2 = new Pair(new TokenAmount(token1, JSBI.BigInt(1200)), new TokenAmount(token2, JSBI.BigInt(1000)), Exchange.UNI)
-  const pair_1_3 = new Pair(new TokenAmount(token1, JSBI.BigInt(1200)), new TokenAmount(token3, JSBI.BigInt(1300)), Exchange.UNI)
+  const pair_0_1 = new Pair(
+    new TokenAmount(token0, JSBI.BigInt(1000)),
+    new TokenAmount(token1, JSBI.BigInt(1000)),
+    exchange
+  )
+  const pair_0_2 = new Pair(
+    new TokenAmount(token0, JSBI.BigInt(1000)),
+    new TokenAmount(token2, JSBI.BigInt(1100)),
+    exchange
+  )
+  const pair_0_3 = new Pair(
+    new TokenAmount(token0, JSBI.BigInt(1000)),
+    new TokenAmount(token3, JSBI.BigInt(900)),
+    exchange
+  )
+  const pair_1_2 = new Pair(
+    new TokenAmount(token1, JSBI.BigInt(1200)),
+    new TokenAmount(token2, JSBI.BigInt(1000)),
+    exchange
+  )
+  const pair_1_3 = new Pair(
+    new TokenAmount(token1, JSBI.BigInt(1200)),
+    new TokenAmount(token3, JSBI.BigInt(1300)),
+    exchange
+  )
 
   const pair_weth_0 = new Pair(
     new TokenAmount(WETH[ChainId.MAINNET], JSBI.BigInt(1000)),
     new TokenAmount(token0, JSBI.BigInt(1000)),
-    Exchange.UNI
+    exchange
   )
 
-  const empty_pair_0_1 = new Pair(new TokenAmount(token0, JSBI.BigInt(0)), new TokenAmount(token1, JSBI.BigInt(0)), Exchange.UNI)
-  
+  const empty_pair_0_1 = new Pair(
+    new TokenAmount(token0, JSBI.BigInt(0)),
+    new TokenAmount(token1, JSBI.BigInt(0)),
+    exchange
+  )
+
   const gas_price_to_beat = `0`
   const miner_bribe_margin = `5`
-  
+
   it('can be constructed with ETHER as input', () => {
     const trade = new Trade(
       new Route([pair_weth_0], ETHER),
@@ -85,13 +110,26 @@ describe('Trade', () => {
 
   describe('#bestTradeExactIn', () => {
     it('throws with empty pairs', () => {
-      expect(() => Trade.bestTradeExactIn([], new TokenAmount(token0, JSBI.BigInt(100)), token2, gas_price_to_beat,
-      miner_bribe_margin)).toThrow('PAIRS')
+      expect(() =>
+        Trade.bestTradeExactIn(
+          [],
+          new TokenAmount(token0, JSBI.BigInt(100)),
+          token2,
+          gas_price_to_beat,
+          miner_bribe_margin
+        )
+      ).toThrow('PAIRS')
     })
     it('throws with max hops of 0', () => {
       expect(() =>
-        Trade.bestTradeExactIn([pair_0_2], new TokenAmount(token0, JSBI.BigInt(100)), token2, gas_price_to_beat,
-        miner_bribe_margin, { maxHops: 0 })
+        Trade.bestTradeExactIn(
+          [pair_0_2],
+          new TokenAmount(token0, JSBI.BigInt(100)),
+          token2,
+          gas_price_to_beat,
+          miner_bribe_margin,
+          { maxHops: 0 }
+        )
       ).toThrow('MAX_HOPS')
     })
 
@@ -115,10 +153,15 @@ describe('Trade', () => {
     })
 
     it('doesnt throw for zero liquidity pairs', () => {
-      expect(Trade.bestTradeExactIn([empty_pair_0_1], new TokenAmount(token0, JSBI.BigInt(100)), token1, gas_price_to_beat,
-      miner_bribe_margin)).toHaveLength(
-        0
-      )
+      expect(
+        Trade.bestTradeExactIn(
+          [empty_pair_0_1],
+          new TokenAmount(token0, JSBI.BigInt(100)),
+          token1,
+          gas_price_to_beat,
+          miner_bribe_margin
+        )
+      ).toHaveLength(0)
     })
 
     it('respects maxHops', () => {
@@ -329,13 +372,26 @@ describe('Trade', () => {
 
   describe('#bestTradeExactOut', () => {
     it('throws with empty pairs', () => {
-      expect(() => Trade.bestTradeExactOut([], token0, new TokenAmount(token2, JSBI.BigInt(100)),gas_price_to_beat,
-      miner_bribe_margin)).toThrow('PAIRS')
+      expect(() =>
+        Trade.bestTradeExactOut(
+          [],
+          token0,
+          new TokenAmount(token2, JSBI.BigInt(100)),
+          gas_price_to_beat,
+          miner_bribe_margin
+        )
+      ).toThrow('PAIRS')
     })
     it('throws with max hops of 0', () => {
       expect(() =>
-        Trade.bestTradeExactOut([pair_0_2], token0, new TokenAmount(token2, JSBI.BigInt(100)), gas_price_to_beat,
-        miner_bribe_margin, { maxHops: 0 })
+        Trade.bestTradeExactOut(
+          [pair_0_2],
+          token0,
+          new TokenAmount(token2, JSBI.BigInt(100)),
+          gas_price_to_beat,
+          miner_bribe_margin,
+          { maxHops: 0 }
+        )
       ).toThrow('MAX_HOPS')
     })
 
@@ -359,10 +415,15 @@ describe('Trade', () => {
     })
 
     it('doesnt throw for zero liquidity pairs', () => {
-      expect(Trade.bestTradeExactOut([empty_pair_0_1], token1, new TokenAmount(token1, JSBI.BigInt(100)),gas_price_to_beat,
-      miner_bribe_margin)).toHaveLength(
-        0
-      )
+      expect(
+        Trade.bestTradeExactOut(
+          [empty_pair_0_1],
+          token1,
+          new TokenAmount(token1, JSBI.BigInt(100)),
+          gas_price_to_beat,
+          miner_bribe_margin
+        )
+      ).toHaveLength(0)
     })
 
     it('respects maxHops', () => {

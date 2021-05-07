@@ -32,11 +32,11 @@ export class Pair {
   public static getAddress(tokenA: Token, tokenB: Token, exchange: Exchange): string {
     const tokens = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA] // does safety checks
     const exchangeIdentifier = '|' + exchange
-    if (PAIR_ADDRESS_CACHE?.[tokens[0].address+exchangeIdentifier]?.[tokens[1].address] === undefined) {
+    if (PAIR_ADDRESS_CACHE?.[tokens[0].address + exchangeIdentifier]?.[tokens[1].address] === undefined) {
       PAIR_ADDRESS_CACHE = {
         ...PAIR_ADDRESS_CACHE,
-        [tokens[0].address+exchangeIdentifier]: {
-          ...PAIR_ADDRESS_CACHE?.[tokens[0].address+exchangeIdentifier],
+        [tokens[0].address + exchangeIdentifier]: {
+          ...PAIR_ADDRESS_CACHE?.[tokens[0].address + exchangeIdentifier],
           [tokens[1].address]: getCreate2Address(
             FACTORY_ADDRESS[exchange],
             keccak256(['bytes'], [pack(['address', 'address'], [tokens[0].address, tokens[1].address])]),
@@ -45,7 +45,7 @@ export class Pair {
         }
       }
     }
-    return PAIR_ADDRESS_CACHE[tokens[0].address+exchangeIdentifier][tokens[1].address]
+    return PAIR_ADDRESS_CACHE[tokens[0].address + exchangeIdentifier][tokens[1].address]
   }
 
   public constructor(tokenAmountA: TokenAmount, tokenAmountB: TokenAmount, exchange: Exchange) {

@@ -15,6 +15,7 @@ const DECIMAL_PERMUTATIONS: [number, number, number][] = [
 ]
 const gas_price_to_beat = `55440000000`
 const miner_bribe_margin = `5`
+const exchange = Exchange.UNI
 
 function decimalize(amount: number, decimals: number): bigint {
   return BigInt(amount) * BigInt(10) ** BigInt(decimals)
@@ -39,17 +40,17 @@ describe('entities', () => {
           new Pair(
             new TokenAmount(tokens[0], decimalize(1, tokens[0].decimals)),
             new TokenAmount(tokens[1], decimalize(1, tokens[1].decimals)),
-            Exchange.UNI
+            exchange
           ),
           new Pair(
             new TokenAmount(tokens[1], decimalize(1, tokens[1].decimals)),
             new TokenAmount(tokens[2], decimalize(1, tokens[2].decimals)),
-            Exchange.UNI
+            exchange
           ),
           new Pair(
             new TokenAmount(tokens[2], decimalize(1, tokens[2].decimals)),
             new TokenAmount(WETH, decimalize(1234, WETH.decimals)),
-            Exchange.UNI
+            exchange
           )
         ]
       })
@@ -110,7 +111,7 @@ describe('entities', () => {
               new Pair(
                 new TokenAmount(tokens[1], decimalize(5, tokens[1].decimals)),
                 new TokenAmount(WETH, decimalize(10, WETH.decimals)),
-                Exchange.UNI
+                exchange
               )
             ],
             tokens[1]
@@ -165,7 +166,7 @@ describe('entities', () => {
                     decimalize(10, WETH.decimals) +
                       (tokens[1].decimals === 9 ? BigInt('30090280812437312') : BigInt('30090270812437322'))
                   ),
-                  Exchange.UNI
+                  exchange
                 )
               ],
               tokens[1]
