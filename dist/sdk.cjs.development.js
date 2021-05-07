@@ -14,7 +14,6 @@ var solidity = require('@ethersproject/solidity');
 var contracts = require('@ethersproject/contracts');
 var networks = require('@ethersproject/networks');
 var providers = require('@ethersproject/providers');
-var IUniswapV2Pair = _interopDefault(require('@uniswap/v2-core/build/IUniswapV2Pair.json'));
 
 var _FACTORY_ADDRESS, _ROUTER_ADDRESS, _INIT_CODE_HASH, _SOLIDITY_TYPE_MAXIMA;
 
@@ -67,12 +66,12 @@ var SolidityType;
 
 var SOLIDITY_TYPE_MAXIMA = (_SOLIDITY_TYPE_MAXIMA = {}, _SOLIDITY_TYPE_MAXIMA[SolidityType.uint8] = /*#__PURE__*/JSBI.BigInt('0xff'), _SOLIDITY_TYPE_MAXIMA[SolidityType.uint256] = /*#__PURE__*/JSBI.BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'), _SOLIDITY_TYPE_MAXIMA);
 var GAS_ESTIMATES = {
-  swapETHForExactTokens: '174552',
-  swapExactETHForTokens: '161308',
-  swapExactTokensForETH: '146035',
-  swapExactTokensForTokens: '143216',
-  swapTokensForExactETH: '189218',
-  swapTokensForExactTokens: '185118'
+  swapETHForExactTokens: '250000',
+  swapExactETHForTokens: '250000',
+  swapExactTokensForETH: '250000',
+  swapExactTokensForTokens: '250000',
+  swapTokensForExactETH: '250000',
+  swapTokensForExactTokens: '250000'
 };
 
 function _defineProperties(target, props) {
@@ -1801,29 +1800,6 @@ var Fetcher = /*#__PURE__*/function () {
         TOKEN_DECIMALS_CACHE = _extends({}, TOKEN_DECIMALS_CACHE, (_extends3 = {}, _extends3[chainId] = _extends({}, (_TOKEN_DECIMALS_CACHE4 = TOKEN_DECIMALS_CACHE) === null || _TOKEN_DECIMALS_CACHE4 === void 0 ? void 0 : _TOKEN_DECIMALS_CACHE4[chainId], (_extends2 = {}, _extends2[address] = decimals, _extends2)), _extends3));
         return decimals;
       })).then(_temp3));
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
-  /**
-   * Fetches information about a pair and constructs a pair from the given two tokens.
-   * @param tokenA first token
-   * @param tokenB second token
-   * @param provider the provider to use to fetch the data
-   */
-  ;
-
-  Fetcher.fetchPairData = function fetchPairData(tokenA, tokenB, provider) {
-    try {
-      if (provider === undefined) provider = providers.getDefaultProvider(networks.getNetwork(tokenA.chainId));
-      !(tokenA.chainId === tokenB.chainId) ? "development" !== "production" ? invariant(false, 'CHAIN_ID') : invariant(false) : void 0;
-      var address = Pair.getAddress(tokenA, tokenB);
-      return Promise.resolve(new contracts.Contract(address, IUniswapV2Pair.abi, provider).getReserves()).then(function (_ref) {
-        var reserves0 = _ref[0],
-            reserves1 = _ref[1];
-        var balances = tokenA.sortsBefore(tokenB) ? [reserves0, reserves1] : [reserves1, reserves0];
-        return new Pair(new TokenAmount(tokenA, balances[0]), new TokenAmount(tokenB, balances[1]));
-      });
     } catch (e) {
       return Promise.reject(e);
     }
