@@ -604,9 +604,9 @@ export class Trade {
 
     const chainId: ChainId | undefined = (currencyIn as Token).chainId || (currencyOut as Token).chainId || undefined
     invariant(chainId, 'BRIBE_ESTIMATES_CHAINID')
-    let amountOut: TokenAmount = wrappedAmount(CurrencyAmount.ether(exactInBribe), chainId)
+    let tokenAmount: TokenAmount = wrappedAmount(CurrencyAmount.ether(exactInBribe), chainId)
     if (etherIn){
-      amountOut = wrappedAmount(CurrencyAmount.ether(exactOutBribe), chainId)
+      tokenAmount = wrappedAmount(CurrencyAmount.ether(exactOutBribe), chainId)
     } 
 
     let minTokenAmountIn: CurrencyAmount | TokenAmount | undefined
@@ -615,16 +615,16 @@ export class Trade {
     for (let i = 0; i < pairs.length; i++){
       const pair = pairs[i]
       // pair irrelevant
-      if (!pair.token0.equals(amountOut.token) && !pair.token1.equals(amountOut.token)) continue 
+      if (!pair.token0.equals(tokenAmount.token) && !pair.token1.equals(tokenAmount.token)) continue 
       if (pair.reserve0.equalTo(ZERO) || pair.reserve1.equalTo(ZERO)) continue
 
       try {
         if (etherIn){
           minTokenAmountIn = CurrencyAmount.ether(exactInBribe)
-          ;[minTokenAmountOut] = pair.getInputAmount(amountOut)
+          ;[minTokenAmountOut] = pair.getInputAmount(tokenAmount)
         } else if (etherOut) {
-          minTokenAmountOut = CurrencyAmount.ether(exactInBribe)
-          ;[minTokenAmountIn] = pair.getInputAmount(amountOut)
+          minTokenAmountOut = CurrencyAmount.ether(exactOutBribe)
+          ;[minTokenAmountIn] = pair.getInputAmount(tokenAmount)
         } 
       } catch (error) {
         // input too low

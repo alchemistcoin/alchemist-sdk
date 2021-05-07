@@ -1571,10 +1571,10 @@ var Trade = /*#__PURE__*/function () {
     var exactOutBribe = calculateMargin(calculateMinerBribe(gasPriceToBeat, exactOutGas, minerBribeMargin), minTradeMargin);
     var chainId = currencyIn.chainId || currencyOut.chainId || undefined;
     !chainId ?  invariant(false, 'BRIBE_ESTIMATES_CHAINID')  : void 0;
-    var amountOut = wrappedAmount(CurrencyAmount.ether(exactInBribe), chainId);
+    var tokenAmount = wrappedAmount(CurrencyAmount.ether(exactInBribe), chainId);
 
     if (etherIn) {
-      amountOut = wrappedAmount(CurrencyAmount.ether(exactOutBribe), chainId);
+      tokenAmount = wrappedAmount(CurrencyAmount.ether(exactOutBribe), chainId);
     }
 
     var minTokenAmountIn;
@@ -1583,20 +1583,20 @@ var Trade = /*#__PURE__*/function () {
     for (var i = 0; i < pairs.length; i++) {
       var pair = pairs[i]; // pair irrelevant
 
-      if (!pair.token0.equals(amountOut.token) && !pair.token1.equals(amountOut.token)) continue;
+      if (!pair.token0.equals(tokenAmount.token) && !pair.token1.equals(tokenAmount.token)) continue;
       if (pair.reserve0.equalTo(ZERO) || pair.reserve1.equalTo(ZERO)) continue;
 
       try {
         if (etherIn) {
           minTokenAmountIn = CurrencyAmount.ether(exactInBribe);
 
-          var _pair$getInputAmount3 = pair.getInputAmount(amountOut);
+          var _pair$getInputAmount3 = pair.getInputAmount(tokenAmount);
 
           minTokenAmountOut = _pair$getInputAmount3[0];
         } else if (etherOut) {
-          minTokenAmountOut = CurrencyAmount.ether(exactInBribe);
+          minTokenAmountOut = CurrencyAmount.ether(exactOutBribe);
 
-          var _pair$getInputAmount4 = pair.getInputAmount(amountOut);
+          var _pair$getInputAmount4 = pair.getInputAmount(tokenAmount);
 
           minTokenAmountIn = _pair$getInputAmount4[0];
         }
