@@ -1,12 +1,14 @@
 import { Token, WETH, ChainId, Pair, TokenAmount, Route, ETHER, Exchange } from '../src'
 
+const exchange = Exchange.UNI
+
 describe('Route', () => {
   const token0 = new Token(ChainId.MAINNET, '0x0000000000000000000000000000000000000001', 18, 't0')
   const token1 = new Token(ChainId.MAINNET, '0x0000000000000000000000000000000000000002', 18, 't1')
   const weth = WETH[ChainId.MAINNET]
-  const pair_0_1 = new Pair(new TokenAmount(token0, '100'), new TokenAmount(token1, '200'), Exchange.UNI)
-  const pair_0_weth = new Pair(new TokenAmount(token0, '100'), new TokenAmount(weth, '100'), Exchange.UNI)
-  const pair_1_weth = new Pair(new TokenAmount(token1, '175'), new TokenAmount(weth, '100'), Exchange.UNI)
+  const pair_0_1 = new Pair(new TokenAmount(token0, '100'), new TokenAmount(token1, '200'), exchange)
+  const pair_0_weth = new Pair(new TokenAmount(token0, '100'), new TokenAmount(weth, '100'), exchange)
+  const pair_1_weth = new Pair(new TokenAmount(token1, '175'), new TokenAmount(weth, '100'), exchange)
 
   it('constructs a path from the tokens', () => {
     const route = new Route([pair_0_1], token0)
