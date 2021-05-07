@@ -117,7 +117,7 @@ describe('entities', () => {
           )
           const inputAmount = new TokenAmount(tokens[1], decimalize(1, tokens[1].decimals))
           const expectedOutputAmount = new TokenAmount(WETH, '1662497915624478906')
-          const trade = new Trade(route, inputAmount, TradeType.EXACT_INPUT, Exchange.UNI, gas_price_to_beat, miner_bribe_margin)
+          const trade = new Trade(route, inputAmount, TradeType.EXACT_INPUT, gas_price_to_beat, miner_bribe_margin)
           expect(trade.route).toEqual(route)
           expect(trade.tradeType).toEqual(TradeType.EXACT_INPUT)
           expect(trade.inputAmount).toEqual(inputAmount)
@@ -137,7 +137,7 @@ describe('entities', () => {
         it('TradeType.EXACT_OUTPUT', () => {
           const outputAmount = new TokenAmount(WETH, '1662497915624478906')
           const expectedInputAmount = new TokenAmount(tokens[1], decimalize(1, tokens[1].decimals))
-          const trade = new Trade(route, outputAmount, TradeType.EXACT_OUTPUT, Exchange.UNI, gas_price_to_beat, miner_bribe_margin)
+          const trade = new Trade(route, outputAmount, TradeType.EXACT_OUTPUT, gas_price_to_beat, miner_bribe_margin)
           expect(trade.route).toEqual(route)
           expect(trade.tradeType).toEqual(TradeType.EXACT_OUTPUT)
           expect(trade.outputAmount).toEqual(outputAmount)
@@ -171,7 +171,7 @@ describe('entities', () => {
               tokens[1]
             )
             const outputAmount = new TokenAmount(tokens[1], '1')
-            const trade = new Trade(route, outputAmount, TradeType.EXACT_INPUT, Exchange.UNI, gas_price_to_beat, miner_bribe_margin)
+            const trade = new Trade(route, outputAmount, TradeType.EXACT_INPUT, gas_price_to_beat, miner_bribe_margin)
 
             expect(trade.priceImpact.toSignificant(18)).toEqual(
               tokens[1].decimals === 9 ? '0.300000099400899902' : '0.3000000000000001'

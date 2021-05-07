@@ -35,8 +35,8 @@ export declare class Pair {
     get reserve0(): TokenAmount;
     get reserve1(): TokenAmount;
     reserveOf(token: Token): TokenAmount;
-    getOutputAmount(inputAmount: TokenAmount, exchange: Exchange): [TokenAmount, Pair];
-    getInputAmount(outputAmount: TokenAmount, exchange: Exchange): [TokenAmount, Pair];
+    getOutputAmount(inputAmount: TokenAmount): [TokenAmount, Pair];
+    getInputAmount(outputAmount: TokenAmount): [TokenAmount, Pair];
     getLiquidityMinted(totalSupply: TokenAmount, tokenAmountA: TokenAmount, tokenAmountB: TokenAmount): TokenAmount;
     getLiquidityValue(token: Token, totalSupply: TokenAmount, liquidity: TokenAmount, feeOn?: boolean, kLast?: BigintIsh): TokenAmount;
 }
