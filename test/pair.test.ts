@@ -7,9 +7,9 @@ describe('Pair', () => {
 
   describe('constructor', () => {
     it('cannot be used for tokens on different chains', () => {
-      expect(() => new Pair(new TokenAmount(USDC, '100'), new TokenAmount(WETH[ChainId.RINKEBY], '100'), exchange)).toThrow(
-        'CHAIN_IDS'
-      )
+      expect(
+        () => new Pair(new TokenAmount(USDC, '100'), new TokenAmount(WETH[ChainId.RINKEBY], '100'), exchange)
+      ).toThrow('CHAIN_IDS')
     })
   })
 
@@ -105,13 +105,21 @@ describe('Pair', () => {
 
   describe('#chainId', () => {
     it('returns the token0 chainId', () => {
-      expect(new Pair(new TokenAmount(USDC, '100'), new TokenAmount(DAI, '100'), exchange).chainId).toEqual(ChainId.MAINNET)
-      expect(new Pair(new TokenAmount(DAI, '100'), new TokenAmount(USDC, '100'), exchange).chainId).toEqual(ChainId.MAINNET)
+      expect(new Pair(new TokenAmount(USDC, '100'), new TokenAmount(DAI, '100'), exchange).chainId).toEqual(
+        ChainId.MAINNET
+      )
+      expect(new Pair(new TokenAmount(DAI, '100'), new TokenAmount(USDC, '100'), exchange).chainId).toEqual(
+        ChainId.MAINNET
+      )
     })
   })
   describe('#involvesToken', () => {
-    expect(new Pair(new TokenAmount(USDC, '100'), new TokenAmount(DAI, '100'), exchange).involvesToken(USDC)).toEqual(true)
-    expect(new Pair(new TokenAmount(USDC, '100'), new TokenAmount(DAI, '100'), exchange).involvesToken(DAI)).toEqual(true)
+    expect(new Pair(new TokenAmount(USDC, '100'), new TokenAmount(DAI, '100'), exchange).involvesToken(USDC)).toEqual(
+      true
+    )
+    expect(new Pair(new TokenAmount(USDC, '100'), new TokenAmount(DAI, '100'), exchange).involvesToken(DAI)).toEqual(
+      true
+    )
     expect(
       new Pair(new TokenAmount(USDC, '100'), new TokenAmount(DAI, '100'), exchange).involvesToken(WETH[ChainId.MAINNET])
     ).toEqual(false)

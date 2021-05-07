@@ -26,8 +26,8 @@ export function parseBigintIsh(bigintIsh: BigintIsh): JSBI {
   return bigintIsh instanceof JSBI
     ? bigintIsh
     : typeof bigintIsh === 'bigint'
-      ? JSBI.BigInt(bigintIsh.toString())
-      : JSBI.BigInt(bigintIsh)
+    ? JSBI.BigInt(bigintIsh.toString())
+    : JSBI.BigInt(bigintIsh)
 }
 
 export function estimatedGasForMethod(methodName: string = 'swapTokensForExactETH', numHops: BigintIsh = '1'): JSBI {
