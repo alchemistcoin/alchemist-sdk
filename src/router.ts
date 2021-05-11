@@ -111,7 +111,7 @@ export abstract class Router {
     }
     let value: string
     const methodName = Trade.methodNameForTradeType(trade.tradeType, etherIn, etherOut, useFeeOnTransfer)
-
+    
     switch (methodName) {
       case 'swapExactETHForTokens':
         swapData.amount0 = amountIn
@@ -126,7 +126,7 @@ export abstract class Router {
       case 'swapExactTokensForTokens':
         swapData.amount0 = amountIn
         swapData.amount1 = amountOut
-        value = ZERO_HEX
+        value = minerBribe
         break
       case 'swapETHForExactTokens':
         invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
@@ -153,7 +153,7 @@ export abstract class Router {
     const swapDataArr: SwapDataArr = [swapData.amount0, swapData.amount1, swapData.path, swapData.to, swapData.deadline]
     const args: [SwapDataArr, string, string] = [swapDataArr, routerAddress, minerBribe]
 
-    invariant(methodName && args && value, 'CALL_PARAMS_MISSING')
+    invariant((methodName && args && value), 'CALL_PARAMS_MISSING')
     return {
       methodName,
       args,

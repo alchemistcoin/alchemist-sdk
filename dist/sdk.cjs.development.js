@@ -1680,7 +1680,7 @@ var Router = /*#__PURE__*/function () {
       case 'swapExactTokensForTokens':
         swapData.amount0 = amountIn;
         swapData.amount1 = amountOut;
-        value = ZERO_HEX;
+        value = minerBribe;
         break;
 
       case 'swapETHForExactTokens':
