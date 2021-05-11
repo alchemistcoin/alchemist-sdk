@@ -211,7 +211,7 @@ export class Trade {
         if (etherIn && i === 0) {
           // reduce the inputAmount by this.minerBribe
           invariant(
-            (inputAmount.greaterThan(this.minerBribe) || inputAmount.equalTo(this.minerBribe)),
+            inputAmount.greaterThan(this.minerBribe),
             `Miner bribe ${this.minerBribe.toExact()} is greater than input ETH ${inputAmount.toExact()}`
           )
           const modifiedAmount = inputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId))
@@ -229,7 +229,7 @@ export class Trade {
         if (etherOut && i === route.path.length - 2) {
           // reduce the outputAmount by this.minerBribe
           invariant(
-            (outputAmount.greaterThan(this.minerBribe) || outputAmount.equalTo(this.minerBribe)),
+            outputAmount.greaterThan(this.minerBribe),
             `Miner bribe ${this.minerBribe.toExact()} is greater than output ETH ${outputAmount.toExact()}`
           )
           const modifiedAmount = outputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId))
