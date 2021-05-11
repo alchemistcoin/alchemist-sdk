@@ -71,10 +71,10 @@ export const SOLIDITY_TYPE_MAXIMA = {
 }
 
 export const GAS_ESTIMATES: { [methodName: string]: BigintIsh } = {
-  swapETHForExactTokens: '250000',
-  swapExactETHForTokens: '250000',
-  swapExactTokensForETH: '250000',
-  swapExactTokensForTokens: '250000',
-  swapTokensForExactETH: '250000',
-  swapTokensForExactTokens: '250000'
+  swapETHForExactTokens: '174552',
+  swapExactETHForTokens: '161308',
+  swapExactTokensForETH: '146057',
+  swapExactTokensForTokens: '143216',
+  swapTokensForExactETH: '189218',
+  swapTokensForExactTokens: '185096'
 }

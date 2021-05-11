@@ -219,9 +219,8 @@ export class Trade {
           // console.log('modified amount in', modifiedAmount.toExact())
           inputAmount = modifiedAmount
           modifiedInput = modifiedAmount
-        } else if (i === 0) {
-          modifiedInput = inputAmount
         }
+        
         const [outputAmount, nextPair] = pair.getOutputAmount(inputAmount)
 
         // if the output is ETH, reduce the output amount
@@ -237,10 +236,8 @@ export class Trade {
           // console.log('modified amount out', modifiedAmount.toExact())
           amounts[i + 1] = modifiedAmount
           modifiedOutput = outputAmount
-        } else if (i === route.path.length - 2) {
-          modifiedOutput = outputAmount
-          amounts[i + 1] = outputAmount
         } else {
+          modifiedOutput = outputAmount
           amounts[i + 1] = outputAmount
         }
 
@@ -305,7 +302,7 @@ export class Trade {
       modifiedInput.raw,
       modifiedOutput.raw
     )
-    this.nextMidPrice = Price.fromRoute(new Route(nextPairs, route.input))
+    this.nextMidPrice = new Route(nextPairs, route.input).midPrice
     this.priceImpact = computePriceImpact(route.midPrice, modifiedInput, modifiedOutput)
 
     // console.log('old price impact', computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount).toSignificant(6))

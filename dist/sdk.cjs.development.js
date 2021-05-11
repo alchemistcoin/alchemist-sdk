@@ -67,12 +67,12 @@ var SolidityType;
 
 var SOLIDITY_TYPE_MAXIMA = (_SOLIDITY_TYPE_MAXIMA = {}, _SOLIDITY_TYPE_MAXIMA[SolidityType.uint8] = /*#__PURE__*/JSBI.BigInt('0xff'), _SOLIDITY_TYPE_MAXIMA[SolidityType.uint256] = /*#__PURE__*/JSBI.BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'), _SOLIDITY_TYPE_MAXIMA);
 var GAS_ESTIMATES = {
-  swapETHForExactTokens: '250000',
-  swapExactETHForTokens: '250000',
-  swapExactTokensForETH: '250000',
-  swapExactTokensForTokens: '250000',
-  swapTokensForExactETH: '250000',
-  swapTokensForExactTokens: '250000'
+  swapETHForExactTokens: '174552',
+  swapExactETHForTokens: '161308',
+  swapExactTokensForETH: '146057',
+  swapExactTokensForTokens: '143216',
+  swapTokensForExactETH: '189218',
+  swapTokensForExactTokens: '185096'
 };
 
 function _defineProperties(target, props) {
@@ -1181,8 +1181,6 @@ var Trade = /*#__PURE__*/function () {
 
           inputAmount = modifiedAmount;
           modifiedInput = modifiedAmount;
-        } else if (i === 0) {
-          modifiedInput = inputAmount;
         }
 
         var _pair$getOutputAmount = pair.getOutputAmount(inputAmount),
@@ -1201,10 +1199,8 @@ var Trade = /*#__PURE__*/function () {
 
           amounts[i + 1] = _modifiedAmount;
           modifiedOutput = outputAmount;
-        } else if (i === route.path.length - 2) {
-          modifiedOutput = outputAmount;
-          amounts[i + 1] = outputAmount;
         } else {
+          modifiedOutput = outputAmount;
           amounts[i + 1] = outputAmount;
         }
 
@@ -1263,7 +1259,7 @@ var Trade = /*#__PURE__*/function () {
     this.inputAmount = tradeType === exports.TradeType.EXACT_INPUT ? amount : route.input === ETHER ? CurrencyAmount.ether(amounts[0].raw) : amounts[0];
     this.outputAmount = tradeType === exports.TradeType.EXACT_OUTPUT ? amount : route.output === ETHER ? CurrencyAmount.ether(amounts[amounts.length - 1].raw) : amounts[amounts.length - 1];
     this.executionPrice = new Price(modifiedInput.currency, modifiedOutput.currency, modifiedInput.raw, modifiedOutput.raw);
-    this.nextMidPrice = Price.fromRoute(new Route(nextPairs, route.input));
+    this.nextMidPrice = new Route(nextPairs, route.input).midPrice;
     this.priceImpact = computePriceImpact(route.midPrice, modifiedInput, modifiedOutput); // console.log('old price impact', computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount).toSignificant(6))
     // console.log('******************')
     // console.log('*** TRADE START **')
