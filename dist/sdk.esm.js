@@ -68,6 +68,17 @@ var SolidityType;
 })(SolidityType || (SolidityType = {}));
 
 var SOLIDITY_TYPE_MAXIMA = (_SOLIDITY_TYPE_MAXIMA = {}, _SOLIDITY_TYPE_MAXIMA[SolidityType.uint8] = /*#__PURE__*/JSBI.BigInt('0xff'), _SOLIDITY_TYPE_MAXIMA[SolidityType.uint256] = /*#__PURE__*/JSBI.BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'), _SOLIDITY_TYPE_MAXIMA);
+var MethodName;
+
+(function (MethodName) {
+  MethodName["swapETHForExactTokens"] = "swapETHForExactTokens";
+  MethodName["swapExactETHForTokens"] = "swapExactETHForTokens";
+  MethodName["swapExactTokensForETH"] = "swapExactTokensForETH";
+  MethodName["swapExactTokensForTokens"] = "swapExactTokensForTokens";
+  MethodName["swapTokensForExactETH"] = "swapTokensForExactETH";
+  MethodName["swapTokensForExactTokens"] = "swapTokensForExactTokens";
+})(MethodName || (MethodName = {}));
+
 var GAS_ESTIMATES = {
   swapETHForExactTokens: '174552',
   swapExactETHForTokens: '161308',
@@ -1610,6 +1621,37 @@ var Trade = /*#__PURE__*/function () {
 
     if (!minTokenAmountIn || !minTokenAmountOut) return null;
     return _ref4 = {}, _ref4[TradeType.EXACT_INPUT] = minTokenAmountIn, _ref4[TradeType.EXACT_OUTPUT] = minTokenAmountOut, _ref4;
+  }
+  /**
+   * Estimate bribe amounts given gas price and margin
+   * @param gasPriceToBeat
+   * @param minerBribeMargin
+   */
+  ;
+
+  Trade.estimateBribeAmounts = function estimateBribeAmounts(gasPriceToBeat, minerBribeMargin) {
+    var _bribesByMethod;
+
+    var bribesByMethod = (_bribesByMethod = {}, _bribesByMethod[MethodName.swapETHForExactTokens] = CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapETHForExactTokens'), minerBribeMargin)), _bribesByMethod[MethodName.swapExactETHForTokens] = CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactETHForTokens'), minerBribeMargin)), _bribesByMethod[MethodName.swapExactTokensForETH] = CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactTokensForETH'), minerBribeMargin)), _bribesByMethod[MethodName.swapExactTokensForTokens] = CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactTokensForTokens'), minerBribeMargin)), _bribesByMethod[MethodName.swapTokensForExactETH] = CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapTokensForExactETH'), minerBribeMargin)), _bribesByMethod[MethodName.swapTokensForExactTokens] = CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapTokensForExactTokens'), minerBribeMargin)), _bribesByMethod);
+    var minBribe = CurrencyAmount.ether('1000000000000000000000000000000000000000000000000');
+    var maxBribe = CurrencyAmount.ether('0');
+    var totalBribe = CurrencyAmount.ether('0');
+
+    for (var methodName in MethodName) {
+      var bribe = bribesByMethod[methodName];
+      totalBribe.add(bribe);
+      if (bribe.lessThan(minBribe)) minBribe = bribe;
+      if (bribe.greaterThan(maxBribe)) maxBribe = bribe;
+    }
+
+    var meanfraction = totalBribe.divide(String(Object.keys(MethodName).length));
+    var meanBribe = CurrencyAmount.ether(JSBI.divide(meanfraction.numerator, meanfraction.denominator));
+    return {
+      estimates: bribesByMethod,
+      minBribe: minBribe,
+      maxBribe: maxBribe,
+      meanBribe: meanBribe
+    };
   };
 
   return Trade;

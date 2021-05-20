@@ -1,6 +1,6 @@
 import invariant from 'tiny-invariant'
-
-import { BigintIsh, ChainId, Exchange, ONE, TradeType, ZERO } from '../constants'
+import JSBI from 'jsbi'
+import { BigintIsh, ChainId, Exchange, ONE, TradeType, ZERO, MethodName } from '../constants'
 import { sortedInsert, calculateMinerBribe, estimatedGasForMethod, calculateMargin } from '../utils'
 import { Currency, ETHER } from './currency'
 import { CurrencyAmount } from './fractions/currencyAmount'
@@ -27,6 +27,14 @@ function computePriceImpact(midPrice: Price, inputAmount: CurrencyAmount, output
 
 export type MinTradeEstimate = { [tradeType in TradeType]: CurrencyAmount }
 
+type BribeEstimates = { [methodName in MethodName]: CurrencyAmount}
+
+export type BribeEstimate = {
+  estimates: BribeEstimates,
+  minBribe: CurrencyAmount,
+  maxBribe: CurrencyAmount,
+  meanBribe: CurrencyAmount, 
+}
 // minimal interface so the input output comparator may be shared across types
 interface InputOutput {
   readonly inputAmount: CurrencyAmount
@@ -669,5 +677,45 @@ export class Trade {
       [TradeType.EXACT_INPUT]: minTokenAmountIn,
       [TradeType.EXACT_OUTPUT]: minTokenAmountOut
     }
+  }
+
+  /**
+   * Estimate bribe amounts given gas price and margin
+   * @param gasPriceToBeat
+   * @param minerBribeMargin
+   */
+   public static estimateBribeAmounts(
+    gasPriceToBeat: BigintIsh,
+    minerBribeMargin: BigintIsh,
+  ): BribeEstimate | null {
+    
+    const bribesByMethod: BribeEstimates  = {
+      [MethodName.swapETHForExactTokens]: CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapETHForExactTokens'), minerBribeMargin)),
+      [MethodName.swapExactETHForTokens]: CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactETHForTokens'), minerBribeMargin)),
+      [MethodName.swapExactTokensForETH]: CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactTokensForETH'), minerBribeMargin)),
+      [MethodName.swapExactTokensForTokens]: CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactTokensForTokens'), minerBribeMargin)),
+      [MethodName.swapTokensForExactETH]: CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapTokensForExactETH'), minerBribeMargin)),
+      [MethodName.swapTokensForExactTokens]: CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapTokensForExactTokens'), minerBribeMargin)),
+    }
+    let minBribe: CurrencyAmount = CurrencyAmount.ether('1000000000000000000000000000000000000000000000000')
+    let maxBribe: CurrencyAmount = CurrencyAmount.ether('0')
+    let totalBribe: CurrencyAmount = CurrencyAmount.ether('0')
+    for (const methodName in MethodName){
+      const bribe: CurrencyAmount = bribesByMethod[methodName as MethodName]
+      
+      totalBribe.add(bribe)
+      if (bribe.lessThan(minBribe)) minBribe = bribe
+      if (bribe.greaterThan(maxBribe)) maxBribe = bribe
+    }
+
+    const meanfraction: Fraction = totalBribe.divide(String(Object.keys(MethodName).length))
+    const meanBribe = CurrencyAmount.ether(JSBI.divide(meanfraction.numerator,meanfraction.denominator))
+    return {
+      estimates: bribesByMethod,
+      minBribe,
+      maxBribe,
+      meanBribe,
+    }
+    
   }
 }

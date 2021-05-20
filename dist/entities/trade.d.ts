@@ -1,4 +1,4 @@
-import { BigintIsh, Exchange, TradeType } from '../constants';
+import { BigintIsh, Exchange, TradeType, MethodName } from '../constants';
 import { Currency } from './currency';
 import { CurrencyAmount } from './fractions/currencyAmount';
 import { Percent } from './fractions/percent';
@@ -7,6 +7,15 @@ import { Pair } from './pair';
 import { Route } from './route';
 export declare type MinTradeEstimate = {
     [tradeType in TradeType]: CurrencyAmount;
+};
+declare type BribeEstimates = {
+    [methodName in MethodName]: CurrencyAmount;
+};
+export declare type BribeEstimate = {
+    estimates: BribeEstimates;
+    minBribe: CurrencyAmount;
+    maxBribe: CurrencyAmount;
+    meanBribe: CurrencyAmount;
 };
 interface InputOutput {
     readonly inputAmount: CurrencyAmount;
@@ -142,5 +151,11 @@ export declare class Trade {
      * @param maxHops maximum number of hops a returned trade can make, e.g. 1 hop goes through a single pair
      */
     static estimateMinTradeAmounts(pairs: Pair[], currencyIn: Currency, currencyOut: Currency, gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh, minTradeMargin: BigintIsh, { maxHops }?: BestTradeOptions): MinTradeEstimate | null;
+    /**
+     * Estimate bribe amounts given gas price and margin
+     * @param gasPriceToBeat
+     * @param minerBribeMargin
+     */
+    static estimateBribeAmounts(gasPriceToBeat: BigintIsh, minerBribeMargin: BigintIsh): BribeEstimate | null;
 }
 export {};
