@@ -49,6 +49,14 @@ export declare const SOLIDITY_TYPE_MAXIMA: {
     uint8: JSBI;
     uint256: JSBI;
 };
+export declare enum MethodName {
+    swapETHForExactTokens = "swapETHForExactTokens",
+    swapExactETHForTokens = "swapExactETHForTokens",
+    swapExactTokensForETH = "swapExactTokensForETH",
+    swapExactTokensForTokens = "swapExactTokensForTokens",
+    swapTokensForExactETH = "swapTokensForExactETH",
+    swapTokensForExactTokens = "swapTokensForExactTokens"
+}
 export declare const GAS_ESTIMATES: {
     [methodName: string]: BigintIsh;
 };
