@@ -40,7 +40,7 @@ export interface SwapParameters {
     /**
      * The arguments to pass to the method, all hex encoded.
      */
-    args: [SwapDataArr, string, string];
+    args: [SwapDataArr, string];
     /**
      * The amount of wei to send in hex.
      */
