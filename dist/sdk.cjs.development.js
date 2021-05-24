@@ -1691,7 +1691,6 @@ var Router = /*#__PURE__*/function () {
     });
     var deadline = 'ttl' in options ? "0x" + (Math.floor(new Date().getTime() / 1000) + options.ttl).toString(16) : "0x" + options.deadline.toString(16);
     var useFeeOnTransfer = Boolean(options.feeOnTransfer);
-    var routerAddress = ROUTER_ADDRESS[trade.exchange];
     var swapData = {
       amount0: amountIn,
       amount1: amountOut,
@@ -1748,7 +1747,7 @@ var Router = /*#__PURE__*/function () {
     }
 
     var swapDataArr = [swapData.amount0, swapData.amount1, swapData.path, swapData.to, swapData.deadline];
-    var args = [swapDataArr, routerAddress, minerBribe];
+    var args = [swapDataArr, minerBribe];
     !(methodName && args && value) ?  invariant(false, 'CALL_PARAMS_MISSING')  : void 0;
     return {
       methodName: methodName,
