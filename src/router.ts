@@ -1,7 +1,6 @@
 import invariant from 'tiny-invariant'
 import { validateAndParseAddress } from './utils'
 import { CurrencyAmount, ETHER, Percent, Trade } from './entities'
-import { ROUTER_ADDRESS } from './constants'
 
 /**
  * Options for producing the arguments to send call to the router.
@@ -47,7 +46,7 @@ export interface SwapParameters {
   /**
    * The arguments to pass to the method, all hex encoded.
    */
-  args: [SwapDataArr, string, string]
+  args: [SwapDataArr, string]
   /**
    * The amount of wei to send in hex.
    */
@@ -101,7 +100,6 @@ export abstract class Router {
         : `0x${options.deadline.toString(16)}`
 
     const useFeeOnTransfer = Boolean(options.feeOnTransfer)
-    const routerAddress = ROUTER_ADDRESS[trade.exchange]
     const swapData: SwapData = {
       amount0: amountIn,
       amount1: amountOut,
@@ -151,7 +149,7 @@ export abstract class Router {
         value = ''
     }
     const swapDataArr: SwapDataArr = [swapData.amount0, swapData.amount1, swapData.path, swapData.to, swapData.deadline]
-    const args: [SwapDataArr, string, string] = [swapDataArr, routerAddress, minerBribe]
+    const args: [SwapDataArr, string] = [swapDataArr, minerBribe]
 
     invariant((methodName && args && value), 'CALL_PARAMS_MISSING')
     return {
