@@ -78,12 +78,12 @@ var MethodName;
 })(MethodName || (MethodName = {}));
 
 var GAS_ESTIMATES = {
-  swapETHForExactTokens: '174552',
-  swapExactETHForTokens: '161308',
-  swapExactTokensForETH: '146057',
-  swapExactTokensForTokens: '143216',
-  swapTokensForExactETH: '189218',
-  swapTokensForExactTokens: '185096'
+  swapETHForExactTokens: '155485',
+  swapExactETHForTokens: '151393',
+  swapExactTokensForETH: '115009',
+  swapExactTokensForTokens: '120272',
+  swapTokensForExactETH: '145192',
+  swapTokensForExactTokens: '147365'
 };
 
 function _defineProperties(target, props) {
