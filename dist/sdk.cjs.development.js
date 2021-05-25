@@ -80,10 +80,10 @@ var MethodName;
 var GAS_ESTIMATES = {
   swapETHForExactTokens: '155485',
   swapExactETHForTokens: '151393',
-  swapExactTokensForETH: '115009',
-  swapExactTokensForTokens: '120272',
-  swapTokensForExactETH: '145192',
-  swapTokensForExactTokens: '147365'
+  swapExactTokensForETH: '165009',
+  swapExactTokensForTokens: '170272',
+  swapTokensForExactETH: '195192',
+  swapTokensForExactTokens: '197365'
 };
 
 function _defineProperties(target, props) {
