@@ -1240,7 +1240,6 @@ var Trade = /*#__PURE__*/function () {
         }
 
         var _pair = route.pairs[_i - 1];
-        console.log('constructor get input amount', _pair, _outputAmount);
 
         var _pair$getInputAmount = _pair.getInputAmount(_outputAmount),
             _inputAmount = _pair$getInputAmount[0],

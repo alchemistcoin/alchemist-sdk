@@ -269,7 +269,6 @@ export class Trade {
           modifiedOutput = outputAmount
         }
         const pair = route.pairs[i - 1]
-        console.log('constructor get input amount', pair, outputAmount)
         const [inputAmount, nextPair] = pair.getInputAmount(outputAmount)
         // if the input is ETH, increase the input amount
         // by the miner bribe
