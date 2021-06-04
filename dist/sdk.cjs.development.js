@@ -1419,8 +1419,8 @@ var Trade = /*#__PURE__*/function () {
         try {
           var newTrade = new Trade(new Route([].concat(currentPairs, [pair]), originalAmountIn.currency, currencyOut), originalAmountIn, tradeType, gasPriceToBeat, minerBribeMargin);
           sortedInsert(bestTrades, newTrade, maxNumResults, tradeComparator);
-        } catch (e) {
-          console.log('trade constructor err', e);
+        } catch (e) {// catch the invariant
+          // console.log('trade constructor err', e)
         }
       } else if (maxHops > 1 && pairs.length > 1) {
         var pairsExcludingThisPair = pairs.slice(0, i).concat(pairs.slice(i + 1, pairs.length)); // otherwise, consider all the other paths that lead from this token as long as we have not exceeded maxHops
@@ -1509,8 +1509,8 @@ var Trade = /*#__PURE__*/function () {
         try {
           var newTrade = new Trade(new Route([pair].concat(currentPairs), currencyIn, originalAmountOut.currency), originalAmountOut, exports.TradeType.EXACT_OUTPUT, gasPriceToBeat, minerBribeMargin);
           sortedInsert(bestTrades, newTrade, maxNumResults, tradeComparator);
-        } catch (e) {
-          console.log('trade constructor err', e);
+        } catch (e) {// catch the invariant
+          // console.log('trade constructor err', e)
         }
       } else if (maxHops > 1 && pairs.length > 1) {
         var pairsExcludingThisPair = pairs.slice(0, i).concat(pairs.slice(i + 1, pairs.length)); // otherwise, consider all the other paths that arrive at this token as long as we have not exceeded maxHops
@@ -1607,38 +1607,7 @@ var Trade = /*#__PURE__*/function () {
         minTokenAmountIn = inTrade.outputAmount;
         minTokenAmountOut = CurrencyAmount.ether(exactOutBribe);
       }
-    } // for (let i = 0; i < pairs.length; i++) {
-    //   const pair = pairs[i]
-    //   // pair irrelevant
-    //   if (!pair.token0.equals(tokenAmount.token) && !pair.token1.equals(tokenAmount.token)) continue
-    //   if (pair.reserve0.equalTo(ZERO) || pair.reserve1.equalTo(ZERO)) continue
-    //   console.log('token amount', tokenAmount)
-    //   console.log('pair', pair)
-    //   console.log(pair.reserve0.toSignificant(6), pair.reserve1.toSignificant(6))
-    //   try {
-    //     if (etherIn) {
-    //       console.log('ether in')
-    //       console.log(exactInBribe)
-    //       console.log(tokenAmount)
-    //       minTokenAmountIn = CurrencyAmount.ether(exactInBribe)
-    //       ;[minTokenAmountOut] = pair.getInputAmount(tokenAmount)
-    //     } else if (etherOut) {
-    //       minTokenAmountOut = CurrencyAmount.ether(exactOutBribe)
-    //       ;[minTokenAmountIn] = pair.getInputAmount(tokenAmount)
-    //     }
-    //   } catch (error) {
-    //     // insufficient Reserves
-    //     if (error.isInsufficientReservesError) {
-    //       continue
-    //     }
-    //     // input too low
-    //     if (error.isInsufficientInputAmountError) {
-    //       continue
-    //     }
-    //     throw error
-    //   }
-    // }
-
+    }
 
     if (!minTokenAmountIn || !minTokenAmountOut) return null;
     return _ref4 = {}, _ref4[exports.TradeType.EXACT_INPUT] = minTokenAmountIn, _ref4[exports.TradeType.EXACT_OUTPUT] = minTokenAmountOut, _ref4;
