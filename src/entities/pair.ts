@@ -149,6 +149,9 @@ export class Pair {
       JSBI.equal(this.reserve1.raw, ZERO) ||
       JSBI.greaterThanOrEqual(outputAmount.raw, this.reserveOf(outputAmount.token).raw)
     ) {
+      console.log('insuff reserves')
+      console.log(JSBI.greaterThanOrEqual(outputAmount.raw, this.reserveOf(outputAmount.token).raw))
+      console.log(outputAmount.raw, this.reserveOf(outputAmount.token).raw)
       throw new InsufficientReservesError()
     }
 

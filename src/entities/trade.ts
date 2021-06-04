@@ -269,6 +269,7 @@ export class Trade {
           modifiedOutput = outputAmount
         }
         const pair = route.pairs[i - 1]
+        console.log('constructor get input amount', pair, outputAmount)
         const [inputAmount, nextPair] = pair.getInputAmount(outputAmount)
         // if the input is ETH, increase the input amount
         // by the miner bribe
@@ -425,18 +426,25 @@ export class Trade {
       }
       // we have arrived at the output token, so this is the final trade of one of the paths
       if (amountOut.token.equals(tokenOut)) {
-        sortedInsert(
-          bestTrades,
-          new Trade(
+        try {
+          const newTrade = new Trade(
             new Route([...currentPairs, pair], originalAmountIn.currency, currencyOut),
             originalAmountIn,
             tradeType,
             gasPriceToBeat,
             minerBribeMargin
-          ),
-          maxNumResults,
-          tradeComparator
-        )
+          )
+          sortedInsert(
+            bestTrades,
+            newTrade,
+            maxNumResults,
+            tradeComparator
+          )
+        } catch (e) {
+          // catch the invariant
+          // console.log('trade constructor err', e)
+        }
+        
       } else if (maxHops > 1 && pairs.length > 1) {
         const pairsExcludingThisPair = pairs.slice(0, i).concat(pairs.slice(i + 1, pairs.length))
 
@@ -522,18 +530,25 @@ export class Trade {
       }
       // we have arrived at the input token, so this is the first trade of one of the paths
       if (amountIn.token.equals(tokenIn)) {
-        sortedInsert(
-          bestTrades,
-          new Trade(
+        try {
+          const newTrade = new Trade(
             new Route([pair, ...currentPairs], currencyIn, originalAmountOut.currency),
             originalAmountOut,
             TradeType.EXACT_OUTPUT,
             gasPriceToBeat,
             minerBribeMargin
-          ),
-          maxNumResults,
-          tradeComparator
-        )
+          )
+          sortedInsert(
+            bestTrades,
+            newTrade,
+            maxNumResults,
+            tradeComparator
+          )
+        } catch (e) {
+          // catch the invariant
+          // console.log('trade constructor err', e)
+        }
+        
       } else if (maxHops > 1 && pairs.length > 1) {
         const pairsExcludingThisPair = pairs.slice(0, i).concat(pairs.slice(i + 1, pairs.length))
 
@@ -615,6 +630,7 @@ export class Trade {
     minTradeMargin: BigintIsh,
     { maxHops = 3 }: BestTradeOptions = {}
   ): MinTradeEstimate | null {
+    
     const etherIn = currencyIn === ETHER
     const etherOut = currencyOut === ETHER
 
@@ -638,39 +654,34 @@ export class Trade {
       minTradeMargin
     )
 
-    const chainId: ChainId | undefined = (currencyIn as Token).chainId || (currencyOut as Token).chainId || undefined
-    invariant(chainId, 'BRIBE_ESTIMATES_CHAINID')
-    let tokenAmount: TokenAmount = wrappedAmount(CurrencyAmount.ether(exactInBribe), chainId)
-    if (etherIn) {
-      tokenAmount = wrappedAmount(CurrencyAmount.ether(exactOutBribe), chainId)
-    }
-
     let minTokenAmountIn: CurrencyAmount | TokenAmount | undefined
     let minTokenAmountOut: CurrencyAmount | TokenAmount | undefined
-
-    for (let i = 0; i < pairs.length; i++) {
-      const pair = pairs[i]
-      // pair irrelevant
-      if (!pair.token0.equals(tokenAmount.token) && !pair.token1.equals(tokenAmount.token)) continue
-      if (pair.reserve0.equalTo(ZERO) || pair.reserve1.equalTo(ZERO)) continue
-
-      try {
-        if (etherIn) {
-          minTokenAmountIn = CurrencyAmount.ether(exactInBribe)
-          ;[minTokenAmountOut] = pair.getInputAmount(tokenAmount)
-        } else if (etherOut) {
-          minTokenAmountOut = CurrencyAmount.ether(exactOutBribe)
-          ;[minTokenAmountIn] = pair.getInputAmount(tokenAmount)
-        }
-      } catch (error) {
-        // input too low
-        if (error.isInsufficientInputAmountError) {
-          continue
-        }
-        throw error
+    if (etherIn){
+      const outTrade = Trade.bestTradeExactOut(
+        pairs,
+        currencyOut,
+        CurrencyAmount.ether(exactOutBribe),
+        '0',
+        '0'
+      )[0]
+      if (outTrade){
+        minTokenAmountIn = CurrencyAmount.ether(exactInBribe)
+        minTokenAmountOut = outTrade.inputAmount
       }
+    } else if (etherOut){
+      const inTrade = Trade.bestTradeExactIn(
+        pairs,
+        CurrencyAmount.ether(exactInBribe),
+        currencyIn,
+        '0',
+        '0'
+      )[0]
+      if (inTrade){
+        minTokenAmountIn = inTrade.outputAmount
+        minTokenAmountOut = CurrencyAmount.ether(exactOutBribe)
+      }
+      
     }
-
     if (!minTokenAmountIn || !minTokenAmountOut) return null
 
     return {
