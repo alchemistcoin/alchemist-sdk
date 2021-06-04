@@ -896,9 +896,6 @@ var Pair = /*#__PURE__*/function () {
     !this.involvesToken(outputAmount.token) ?  invariant(false, 'TOKEN')  : void 0;
 
     if (JSBI.equal(this.reserve0.raw, ZERO) || JSBI.equal(this.reserve1.raw, ZERO) || JSBI.greaterThanOrEqual(outputAmount.raw, this.reserveOf(outputAmount.token).raw)) {
-      console.log('insuff reserves');
-      console.log(JSBI.greaterThanOrEqual(outputAmount.raw, this.reserveOf(outputAmount.token).raw));
-      console.log(outputAmount.raw, this.reserveOf(outputAmount.token).raw);
       throw new InsufficientReservesError();
     }
 
