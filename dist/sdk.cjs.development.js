@@ -1412,7 +1412,12 @@ var Trade = /*#__PURE__*/function () {
 
 
       if (amountOut.token.equals(tokenOut)) {
-        sortedInsert(bestTrades, new Trade(new Route([].concat(currentPairs, [pair]), originalAmountIn.currency, currencyOut), originalAmountIn, tradeType, gasPriceToBeat, minerBribeMargin), maxNumResults, tradeComparator);
+        try {
+          var newTrade = new Trade(new Route([].concat(currentPairs, [pair]), originalAmountIn.currency, currencyOut), originalAmountIn, tradeType, gasPriceToBeat, minerBribeMargin);
+          sortedInsert(bestTrades, newTrade, maxNumResults, tradeComparator);
+        } catch (e) {// catch the invariant
+          // console.log('trade constructor err', e)
+        }
       } else if (maxHops > 1 && pairs.length > 1) {
         var pairsExcludingThisPair = pairs.slice(0, i).concat(pairs.slice(i + 1, pairs.length)); // otherwise, consider all the other paths that lead from this token as long as we have not exceeded maxHops
 
@@ -1497,7 +1502,12 @@ var Trade = /*#__PURE__*/function () {
 
 
       if (amountIn.token.equals(tokenIn)) {
-        sortedInsert(bestTrades, new Trade(new Route([pair].concat(currentPairs), currencyIn, originalAmountOut.currency), originalAmountOut, exports.TradeType.EXACT_OUTPUT, gasPriceToBeat, minerBribeMargin), maxNumResults, tradeComparator);
+        try {
+          var newTrade = new Trade(new Route([pair].concat(currentPairs), currencyIn, originalAmountOut.currency), originalAmountOut, exports.TradeType.EXACT_OUTPUT, gasPriceToBeat, minerBribeMargin);
+          sortedInsert(bestTrades, newTrade, maxNumResults, tradeComparator);
+        } catch (e) {// catch the invariant
+          // console.log('trade constructor err', e)
+        }
       } else if (maxHops > 1 && pairs.length > 1) {
         var pairsExcludingThisPair = pairs.slice(0, i).concat(pairs.slice(i + 1, pairs.length)); // otherwise, consider all the other paths that arrive at this token as long as we have not exceeded maxHops
 
@@ -1576,44 +1586,22 @@ var Trade = /*#__PURE__*/function () {
     var exactOutGas = estimatedGasForMethod(Trade.methodNameForTradeType(exports.TradeType.EXACT_OUTPUT, etherIn, etherOut), maxHops.toString());
     var exactInBribe = calculateMargin(calculateMinerBribe(gasPriceToBeat, exactInGas, minerBribeMargin), minTradeMargin);
     var exactOutBribe = calculateMargin(calculateMinerBribe(gasPriceToBeat, exactOutGas, minerBribeMargin), minTradeMargin);
-    var chainId = currencyIn.chainId || currencyOut.chainId || undefined;
-    !chainId ?  invariant(false, 'BRIBE_ESTIMATES_CHAINID')  : void 0;
-    var tokenAmount = wrappedAmount(CurrencyAmount.ether(exactInBribe), chainId);
-
-    if (etherIn) {
-      tokenAmount = wrappedAmount(CurrencyAmount.ether(exactOutBribe), chainId);
-    }
-
     var minTokenAmountIn;
     var minTokenAmountOut;
 
-    for (var i = 0; i < pairs.length; i++) {
-      var pair = pairs[i]; // pair irrelevant
+    if (etherIn) {
+      var outTrade = Trade.bestTradeExactOut(pairs, currencyOut, CurrencyAmount.ether(exactOutBribe), '0', '0')[0];
 
-      if (!pair.token0.equals(tokenAmount.token) && !pair.token1.equals(tokenAmount.token)) continue;
-      if (pair.reserve0.equalTo(ZERO) || pair.reserve1.equalTo(ZERO)) continue;
+      if (outTrade) {
+        minTokenAmountIn = CurrencyAmount.ether(exactInBribe);
+        minTokenAmountOut = outTrade.inputAmount;
+      }
+    } else if (etherOut) {
+      var inTrade = Trade.bestTradeExactIn(pairs, CurrencyAmount.ether(exactInBribe), currencyIn, '0', '0')[0];
 
-      try {
-        if (etherIn) {
-          minTokenAmountIn = CurrencyAmount.ether(exactInBribe);
-
-          var _pair$getInputAmount3 = pair.getInputAmount(tokenAmount);
-
-          minTokenAmountOut = _pair$getInputAmount3[0];
-        } else if (etherOut) {
-          minTokenAmountOut = CurrencyAmount.ether(exactOutBribe);
-
-          var _pair$getInputAmount4 = pair.getInputAmount(tokenAmount);
-
-          minTokenAmountIn = _pair$getInputAmount4[0];
-        }
-      } catch (error) {
-        // input too low
-        if (error.isInsufficientInputAmountError) {
-          continue;
-        }
-
-        throw error;
+      if (inTrade) {
+        minTokenAmountIn = inTrade.outputAmount;
+        minTokenAmountOut = CurrencyAmount.ether(exactOutBribe);
       }
     }
 
