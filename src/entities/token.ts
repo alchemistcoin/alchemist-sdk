@@ -1,17 +1,26 @@
-import invariant from 'tiny-invariant'
+import { AbstractCurrency } from './AbstractCurrency'
 import { ChainId } from '../constants'
+import { Currency } from './Currency'
+import invariant from 'tiny-invariant'
 import { validateAndParseAddress } from '../utils'
-import { Currency } from './currency'
-
 /**
  * Represents an ERC20 token with a unique address and some metadata.
  */
-export class Token extends Currency {
+export class Token extends AbstractCurrency {
   public readonly chainId: ChainId
   public readonly address: string
 
-  public constructor(chainId: ChainId, address: string, decimals: number, symbol?: string, name?: string) {
-    super(decimals, symbol, name)
+  public readonly isNative: false = false
+  public readonly isToken: true = true
+
+  public constructor(
+    chainId: ChainId,
+    address: string,
+    decimals: number,
+    symbol?: string,
+    name?: string
+  ) {
+    super(chainId, decimals, symbol, name)
     this.chainId = chainId
     this.address = validateAndParseAddress(address)
   }
@@ -20,12 +29,12 @@ export class Token extends Currency {
    * Returns true if the two tokens are equivalent, i.e. have the same chainId and address.
    * @param other other token to compare
    */
-  public equals(other: Token): boolean {
-    // short circuit on reference equality
-    if (this === other) {
-      return true
-    }
-    return this.chainId === other.chainId && this.address === other.address
+  public equals(other: Currency): boolean {
+    return (
+      other.isToken &&
+      this.chainId === other.chainId &&
+      this.address === other.address
+    )
   }
 
   /**
@@ -39,12 +48,22 @@ export class Token extends Currency {
     invariant(this.address !== other.address, 'ADDRESSES')
     return this.address.toLowerCase() < other.address.toLowerCase()
   }
+
+  /**
+   * Return this token, which does not need to be wrapped
+   */
+  public get wrapped(): Token {
+    return this
+  }
 }
 
 /**
  * Compares two currencies for equality
  */
-export function currencyEquals(currencyA: Currency, currencyB: Currency): boolean {
+export function currencyEquals(
+  currencyA: Currency,
+  currencyB: Currency
+): boolean {
   if (currencyA instanceof Token && currencyB instanceof Token) {
     return currencyA.equals(currencyB)
   } else if (currencyA instanceof Token) {
@@ -56,7 +75,7 @@ export function currencyEquals(currencyA: Currency, currencyB: Currency): boolea
   }
 }
 
-export const WETH = {
+export const WETH: { [chainId: number]: Token } = {
   [ChainId.MAINNET]: new Token(
     ChainId.MAINNET,
     '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',

@@ -1,9 +1,14 @@
 import invariant from 'tiny-invariant'
 import warning from 'tiny-warning'
 import JSBI from 'jsbi'
-import { getAddress } from '@ethersproject/address'
-
-import { BigintIsh, ZERO, ONE, TWO, THREE, SolidityType, SOLIDITY_TYPE_MAXIMA, GAS_ESTIMATES } from './constants'
+import { getAddress, getCreate2Address } from '@ethersproject/address'
+import { keccak256, pack } from '@ethersproject/solidity'
+import { Exchange, BigintIsh, ZERO, ONE, TWO, THREE, SolidityType, SOLIDITY_TYPE_MAXIMA, GAS_ESTIMATES, INIT_CODE_HASH, FACTORY_ADDRESS} from './constants'
+import { Currency } from './entities/Currency'
+import { CurrencyAmount } from './entities/CurrencyAmount'
+import { Percent } from './entities/Percent'
+import { Price } from './entities/Price'
+import { Token } from './entities/Token'
 
 export function validateSolidityTypeInstance(value: JSBI, solidityType: SolidityType): void {
   invariant(JSBI.greaterThanOrEqual(value, ZERO), `${value} is not a ${solidityType}.`)
@@ -26,7 +31,7 @@ export function parseBigintIsh(bigintIsh: BigintIsh): JSBI {
   return bigintIsh instanceof JSBI
     ? bigintIsh
     : typeof bigintIsh === 'bigint'
-    ? JSBI.BigInt(bigintIsh.toString())
+    ? JSBI.BigInt(bigintIsh)
     : JSBI.BigInt(bigintIsh)
 }
 
@@ -104,3 +109,49 @@ export function sortedInsert<T>(items: T[], add: T, maxSize: number, comparator:
     return isFull ? items.pop()! : null
   }
 }
+
+export const computePairAddress = ({
+  exchange,
+  tokenA,
+  tokenB,
+}: {
+  exchange: Exchange
+  tokenA: Token
+  tokenB: Token
+}): string => {
+  const [token0, token1] = tokenA.sortsBefore(tokenB)
+    ? [tokenA, tokenB]
+    : [tokenB, tokenA] // does safety checks
+  return getCreate2Address(
+    FACTORY_ADDRESS[exchange],
+    keccak256(
+      ['bytes'],
+      [pack(['address', 'address'], [token0.address, token1.address])]
+    ),
+    INIT_CODE_HASH[exchange]
+  )
+}
+
+/**
+ * Returns the percent difference between the mid price and the execution price, i.e. price impact.
+ * @param midPrice mid price before the trade
+ * @param inputAmount the input amount of the trade
+ * @param outputAmount the output amount of the trade
+ */
+export function computePriceImpact<
+  TBase extends Currency,
+  TQuote extends Currency
+>(
+  midPrice: Price<TBase, TQuote>,
+  inputAmount: CurrencyAmount<TBase>,
+  outputAmount: CurrencyAmount<TQuote>
+): Percent {
+  const quotedOutputAmount = midPrice.quote(inputAmount)
+  // calculate price impact := (exactQuote - outputAmount) / exactQuote
+  const priceImpact = quotedOutputAmount
+    .subtract(outputAmount)
+    .divide(quotedOutputAmount)
+  return new Percent(priceImpact.numerator, priceImpact.denominator)
+}
+
+

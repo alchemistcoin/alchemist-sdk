@@ -1,13 +1,13 @@
-import { Price } from './fractions/price';
-import { TokenAmount } from './fractions/tokenAmount';
-import { BigintIsh, Exchange, ChainId } from '../constants';
-import { Token } from './token';
+import { Price } from './Price';
+import { BigintIsh, Exchange } from '../constants';
+import { CurrencyAmount } from './CurrencyAmount';
+import { Token } from './Token';
 export declare class Pair {
     readonly exchange: Exchange;
     readonly liquidityToken: Token;
     private readonly tokenAmounts;
     static getAddress(tokenA: Token, tokenB: Token, exchange: Exchange): string;
-    constructor(tokenAmountA: TokenAmount, tokenAmountB: TokenAmount, exchange: Exchange);
+    constructor(currencyAmountA: CurrencyAmount<Token>, tokenAmountB: CurrencyAmount<Token>, exchange: Exchange);
     /**
      * Returns true if the token is either token0 or token1
      * @param token to check
@@ -16,27 +16,27 @@ export declare class Pair {
     /**
      * Returns the current mid price of the pair in terms of token0, i.e. the ratio of reserve1 to reserve0
      */
-    get token0Price(): Price;
+    get token0Price(): Price<Token, Token>;
     /**
      * Returns the current mid price of the pair in terms of token1, i.e. the ratio of reserve0 to reserve1
      */
-    get token1Price(): Price;
+    get token1Price(): Price<Token, Token>;
     /**
      * Return the price of the given token in terms of the other token in the pair.
      * @param token token to return price of
      */
-    priceOf(token: Token): Price;
+    priceOf(token: Token): Price<Token, Token>;
     /**
      * Returns the chain ID of the tokens in the pair.
      */
-    get chainId(): ChainId;
+    get chainId(): number;
     get token0(): Token;
     get token1(): Token;
-    get reserve0(): TokenAmount;
-    get reserve1(): TokenAmount;
-    reserveOf(token: Token): TokenAmount;
-    getOutputAmount(inputAmount: TokenAmount): [TokenAmount, Pair];
-    getInputAmount(outputAmount: TokenAmount): [TokenAmount, Pair];
-    getLiquidityMinted(totalSupply: TokenAmount, tokenAmountA: TokenAmount, tokenAmountB: TokenAmount): TokenAmount;
-    getLiquidityValue(token: Token, totalSupply: TokenAmount, liquidity: TokenAmount, feeOn?: boolean, kLast?: BigintIsh): TokenAmount;
+    get reserve0(): CurrencyAmount<Token>;
+    get reserve1(): CurrencyAmount<Token>;
+    reserveOf(token: Token): CurrencyAmount<Token>;
+    getOutputAmount(inputAmount: CurrencyAmount<Token>): [CurrencyAmount<Token>, Pair];
+    getInputAmount(outputAmount: CurrencyAmount<Token>): [CurrencyAmount<Token>, Pair];
+    getLiquidityMinted(totalSupply: CurrencyAmount<Token>, tokenAmountA: CurrencyAmount<Token>, tokenAmountB: CurrencyAmount<Token>): CurrencyAmount<Token>;
+    getLiquidityValue(token: Token, totalSupply: CurrencyAmount<Token>, liquidity: CurrencyAmount<Token>, feeOn?: boolean, kLast?: BigintIsh): CurrencyAmount<Token>;
 }

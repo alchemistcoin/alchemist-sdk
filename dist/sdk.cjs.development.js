@@ -6,11 +6,11 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var JSBI = _interopDefault(require('jsbi'));
 var invariant = _interopDefault(require('tiny-invariant'));
+var _Big = _interopDefault(require('big.js'));
+var _Decimal = _interopDefault(require('decimal.js-light'));
+var toFormat = _interopDefault(require('toformat'));
 var warning = _interopDefault(require('tiny-warning'));
 var address = require('@ethersproject/address');
-var _Big = _interopDefault(require('big.js'));
-var toFormat = _interopDefault(require('toformat'));
-var _Decimal = _interopDefault(require('decimal.js-light'));
 var solidity = require('@ethersproject/solidity');
 var contracts = require('@ethersproject/contracts');
 var networks = require('@ethersproject/networks');
@@ -44,6 +44,7 @@ var _FACTORY_ADDRESS, _ROUTER_ADDRESS, _INIT_CODE_HASH, _SOLIDITY_TYPE_MAXIMA;
   Rounding[Rounding["ROUND_UP"] = 2] = "ROUND_UP";
 })(exports.Rounding || (exports.Rounding = {}));
 
+var MaxUint256 = /*#__PURE__*/JSBI.BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
 var FACTORY_ADDRESS = (_FACTORY_ADDRESS = {}, _FACTORY_ADDRESS[exports.Exchange.UNI] = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f', _FACTORY_ADDRESS[exports.Exchange.SUSHI] = '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac', _FACTORY_ADDRESS[exports.Exchange.UNDEFINED] = '0x0', _FACTORY_ADDRESS);
 var ROUTER_ADDRESS = (_ROUTER_ADDRESS = {}, _ROUTER_ADDRESS[exports.Exchange.UNI] = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D', _ROUTER_ADDRESS[exports.Exchange.SUSHI] = '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9', _ROUTER_ADDRESS[exports.Exchange.UNDEFINED] = '0x0', _ROUTER_ADDRESS);
 var INIT_CODE_HASH = (_INIT_CODE_HASH = {}, _INIT_CODE_HASH[exports.Exchange.UNI] = '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f', _INIT_CODE_HASH[exports.Exchange.SUSHI] = '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303', _INIT_CODE_HASH[exports.Exchange.UNDEFINED] = '0x0', _INIT_CODE_HASH);
@@ -58,15 +59,13 @@ var TEN = /*#__PURE__*/JSBI.BigInt(10);
 var _100 = /*#__PURE__*/JSBI.BigInt(100);
 var _997 = /*#__PURE__*/JSBI.BigInt(997);
 var _1000 = /*#__PURE__*/JSBI.BigInt(1000);
-var SolidityType;
 
 (function (SolidityType) {
   SolidityType["uint8"] = "uint8";
   SolidityType["uint256"] = "uint256";
-})(SolidityType || (SolidityType = {}));
+})(exports.SolidityType || (exports.SolidityType = {}));
 
-var SOLIDITY_TYPE_MAXIMA = (_SOLIDITY_TYPE_MAXIMA = {}, _SOLIDITY_TYPE_MAXIMA[SolidityType.uint8] = /*#__PURE__*/JSBI.BigInt('0xff'), _SOLIDITY_TYPE_MAXIMA[SolidityType.uint256] = /*#__PURE__*/JSBI.BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'), _SOLIDITY_TYPE_MAXIMA);
-var MethodName;
+var SOLIDITY_TYPE_MAXIMA = (_SOLIDITY_TYPE_MAXIMA = {}, _SOLIDITY_TYPE_MAXIMA[exports.SolidityType.uint8] = /*#__PURE__*/JSBI.BigInt('0xff'), _SOLIDITY_TYPE_MAXIMA[exports.SolidityType.uint256] = /*#__PURE__*/JSBI.BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'), _SOLIDITY_TYPE_MAXIMA);
 
 (function (MethodName) {
   MethodName["swapETHForExactTokens"] = "swapETHForExactTokens";
@@ -75,7 +74,7 @@ var MethodName;
   MethodName["swapExactTokensForTokens"] = "swapExactTokensForTokens";
   MethodName["swapTokensForExactETH"] = "swapTokensForExactETH";
   MethodName["swapTokensForExactTokens"] = "swapTokensForExactTokens";
-})(MethodName || (MethodName = {}));
+})(exports.MethodName || (exports.MethodName = {}));
 
 var GAS_ESTIMATES = {
   swapETHForExactTokens: '155485',
@@ -303,6 +302,429 @@ var InsufficientInputAmountError = /*#__PURE__*/function (_Error2) {
   return InsufficientInputAmountError;
 }( /*#__PURE__*/_wrapNativeSuper(Error));
 
+/**
+ * A currency is any fungible financial instrument, including Ether, all ERC20 tokens, and other chain-native currencies
+ */
+
+var AbstractCurrency =
+/**
+ * Constructs an instance of the base class `BaseCurrency`.
+ * @param chainId the chain ID on which this currency resides
+ * @param decimals decimals of the currency
+ * @param symbol symbol of the currency
+ * @param name of the currency
+ */
+function AbstractCurrency(chainId, decimals, symbol, name) {
+  !Number.isSafeInteger(chainId) ?  invariant(false, 'CHAIN_ID')  : void 0;
+  !(decimals >= 0 && decimals < 255 && Number.isInteger(decimals)) ?  invariant(false, 'DECIMALS')  : void 0;
+  this.chainId = chainId;
+  this.decimals = decimals;
+  this.symbol = symbol;
+  this.name = name;
+};
+
+var _toSignificantRoundin, _toFixedRounding;
+var Decimal = /*#__PURE__*/toFormat(_Decimal);
+var Big = /*#__PURE__*/toFormat(_Big);
+var toSignificantRounding = (_toSignificantRoundin = {}, _toSignificantRoundin[exports.Rounding.ROUND_DOWN] = Decimal.ROUND_DOWN, _toSignificantRoundin[exports.Rounding.ROUND_HALF_UP] = Decimal.ROUND_HALF_UP, _toSignificantRoundin[exports.Rounding.ROUND_UP] = Decimal.ROUND_UP, _toSignificantRoundin);
+var toFixedRounding = (_toFixedRounding = {}, _toFixedRounding[exports.Rounding.ROUND_DOWN] = 0, _toFixedRounding[exports.Rounding.ROUND_HALF_UP] = 1, _toFixedRounding[exports.Rounding.ROUND_UP] = 3, _toFixedRounding);
+var Fraction = /*#__PURE__*/function () {
+  function Fraction(numerator, denominator) {
+    if (denominator === void 0) {
+      denominator = JSBI.BigInt(1);
+    }
+
+    this.numerator = JSBI.BigInt(numerator);
+    this.denominator = JSBI.BigInt(denominator);
+  }
+
+  Fraction.tryParseFraction = function tryParseFraction(fractionish) {
+    if (fractionish instanceof JSBI || typeof fractionish === 'number' || typeof fractionish === 'string') return new Fraction(fractionish);
+    if ('numerator' in fractionish && 'denominator' in fractionish) return fractionish;
+    throw new Error('Could not parse fraction');
+  } // performs floor division
+  ;
+
+  var _proto = Fraction.prototype;
+
+  _proto.invert = function invert() {
+    return new Fraction(this.denominator, this.numerator);
+  };
+
+  _proto.add = function add(other) {
+    var otherParsed = Fraction.tryParseFraction(other);
+
+    if (JSBI.equal(this.denominator, otherParsed.denominator)) {
+      return new Fraction(JSBI.add(this.numerator, otherParsed.numerator), this.denominator);
+    }
+
+    return new Fraction(JSBI.add(JSBI.multiply(this.numerator, otherParsed.denominator), JSBI.multiply(otherParsed.numerator, this.denominator)), JSBI.multiply(this.denominator, otherParsed.denominator));
+  };
+
+  _proto.subtract = function subtract(other) {
+    var otherParsed = Fraction.tryParseFraction(other);
+
+    if (JSBI.equal(this.denominator, otherParsed.denominator)) {
+      return new Fraction(JSBI.subtract(this.numerator, otherParsed.numerator), this.denominator);
+    }
+
+    return new Fraction(JSBI.subtract(JSBI.multiply(this.numerator, otherParsed.denominator), JSBI.multiply(otherParsed.numerator, this.denominator)), JSBI.multiply(this.denominator, otherParsed.denominator));
+  };
+
+  _proto.lessThan = function lessThan(other) {
+    var otherParsed = Fraction.tryParseFraction(other);
+    return JSBI.lessThan(JSBI.multiply(this.numerator, otherParsed.denominator), JSBI.multiply(otherParsed.numerator, this.denominator));
+  };
+
+  _proto.equalTo = function equalTo(other) {
+    var otherParsed = Fraction.tryParseFraction(other);
+    return JSBI.equal(JSBI.multiply(this.numerator, otherParsed.denominator), JSBI.multiply(otherParsed.numerator, this.denominator));
+  };
+
+  _proto.greaterThan = function greaterThan(other) {
+    var otherParsed = Fraction.tryParseFraction(other);
+    return JSBI.greaterThan(JSBI.multiply(this.numerator, otherParsed.denominator), JSBI.multiply(otherParsed.numerator, this.denominator));
+  };
+
+  _proto.multiply = function multiply(other) {
+    var otherParsed = Fraction.tryParseFraction(other);
+    return new Fraction(JSBI.multiply(this.numerator, otherParsed.numerator), JSBI.multiply(this.denominator, otherParsed.denominator));
+  };
+
+  _proto.divide = function divide(other) {
+    var otherParsed = Fraction.tryParseFraction(other);
+    return new Fraction(JSBI.multiply(this.numerator, otherParsed.denominator), JSBI.multiply(this.denominator, otherParsed.numerator));
+  };
+
+  _proto.toSignificant = function toSignificant(significantDigits, format, rounding) {
+    if (format === void 0) {
+      format = {
+        groupSeparator: ''
+      };
+    }
+
+    if (rounding === void 0) {
+      rounding = exports.Rounding.ROUND_HALF_UP;
+    }
+
+    !Number.isInteger(significantDigits) ?  invariant(false, significantDigits + " is not an integer.")  : void 0;
+    !(significantDigits > 0) ?  invariant(false, significantDigits + " is not positive.")  : void 0;
+    Decimal.set({
+      precision: significantDigits + 1,
+      rounding: toSignificantRounding[rounding]
+    });
+    var quotient = new Decimal(this.numerator.toString()).div(this.denominator.toString()).toSignificantDigits(significantDigits);
+    return quotient.toFormat(quotient.decimalPlaces(), format);
+  };
+
+  _proto.toFixed = function toFixed(decimalPlaces, format, rounding) {
+    if (format === void 0) {
+      format = {
+        groupSeparator: ''
+      };
+    }
+
+    if (rounding === void 0) {
+      rounding = exports.Rounding.ROUND_HALF_UP;
+    }
+
+    !Number.isInteger(decimalPlaces) ?  invariant(false, decimalPlaces + " is not an integer.")  : void 0;
+    !(decimalPlaces >= 0) ?  invariant(false, decimalPlaces + " is negative.")  : void 0;
+    Big.DP = decimalPlaces;
+    Big.RM = toFixedRounding[rounding];
+    return new Big(this.numerator.toString()).div(this.denominator.toString()).toFormat(decimalPlaces, format);
+  }
+  /**
+   * Helper method for converting any super class back to a fraction
+   */
+  ;
+
+  _createClass(Fraction, [{
+    key: "quotient",
+    get: function get() {
+      return JSBI.divide(this.numerator, this.denominator);
+    } // remainder after floor division
+
+  }, {
+    key: "remainder",
+    get: function get() {
+      return new Fraction(JSBI.remainder(this.numerator, this.denominator), this.denominator);
+    }
+  }, {
+    key: "asFraction",
+    get: function get() {
+      return new Fraction(this.numerator, this.denominator);
+    }
+  }]);
+
+  return Fraction;
+}();
+
+var Big$1 = /*#__PURE__*/toFormat(_Big);
+var CurrencyAmount = /*#__PURE__*/function (_Fraction) {
+  _inheritsLoose(CurrencyAmount, _Fraction);
+
+  function CurrencyAmount(currency, numerator, denominator) {
+    var _this;
+
+    _this = _Fraction.call(this, numerator, denominator) || this;
+    !JSBI.lessThanOrEqual(_this.quotient, MaxUint256) ?  invariant(false, 'AMOUNT')  : void 0;
+    _this.currency = currency;
+    _this.decimalScale = JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(currency.decimals));
+    return _this;
+  }
+  /**
+   * Returns a new currency amount instance from the unitless amount of token, i.e. the raw amount
+   * @param currency the currency in the amount
+   * @param rawAmount the raw token or ether amount
+   */
+
+
+  CurrencyAmount.fromRawAmount = function fromRawAmount(currency, rawAmount) {
+    return new CurrencyAmount(currency, rawAmount);
+  }
+  /**
+   * Construct a currency amount with a denominator that is not equal to 1
+   * @param currency the currency
+   * @param numerator the numerator of the fractional token amount
+   * @param denominator the denominator of the fractional token amount
+   */
+  ;
+
+  CurrencyAmount.fromFractionalAmount = function fromFractionalAmount(currency, numerator, denominator) {
+    return new CurrencyAmount(currency, numerator, denominator);
+  };
+
+  var _proto = CurrencyAmount.prototype;
+
+  _proto.add = function add(other) {
+    !this.currency.equals(other.currency) ?  invariant(false, 'CURRENCY')  : void 0;
+
+    var added = _Fraction.prototype.add.call(this, other);
+
+    return CurrencyAmount.fromFractionalAmount(this.currency, added.numerator, added.denominator);
+  };
+
+  _proto.subtract = function subtract(other) {
+    !this.currency.equals(other.currency) ?  invariant(false, 'CURRENCY')  : void 0;
+
+    var subtracted = _Fraction.prototype.subtract.call(this, other);
+
+    return CurrencyAmount.fromFractionalAmount(this.currency, subtracted.numerator, subtracted.denominator);
+  };
+
+  _proto.multiply = function multiply(other) {
+    var multiplied = _Fraction.prototype.multiply.call(this, other);
+
+    return CurrencyAmount.fromFractionalAmount(this.currency, multiplied.numerator, multiplied.denominator);
+  };
+
+  _proto.divide = function divide(other) {
+    var divided = _Fraction.prototype.divide.call(this, other);
+
+    return CurrencyAmount.fromFractionalAmount(this.currency, divided.numerator, divided.denominator);
+  };
+
+  _proto.toSignificant = function toSignificant(significantDigits, format, rounding) {
+    if (significantDigits === void 0) {
+      significantDigits = 6;
+    }
+
+    if (rounding === void 0) {
+      rounding = exports.Rounding.ROUND_DOWN;
+    }
+
+    return _Fraction.prototype.divide.call(this, this.decimalScale).toSignificant(significantDigits, format, rounding);
+  };
+
+  _proto.toFixed = function toFixed(decimalPlaces, format, rounding) {
+    if (decimalPlaces === void 0) {
+      decimalPlaces = this.currency.decimals;
+    }
+
+    if (rounding === void 0) {
+      rounding = exports.Rounding.ROUND_DOWN;
+    }
+
+    !(decimalPlaces <= this.currency.decimals) ?  invariant(false, 'DECIMALS')  : void 0;
+    return _Fraction.prototype.divide.call(this, this.decimalScale).toFixed(decimalPlaces, format, rounding);
+  };
+
+  _proto.toExact = function toExact(format) {
+    if (format === void 0) {
+      format = {
+        groupSeparator: ''
+      };
+    }
+
+    Big$1.DP = this.currency.decimals;
+    return new Big$1(this.quotient.toString()).div(this.decimalScale.toString()).toFormat(format);
+  };
+
+  _createClass(CurrencyAmount, [{
+    key: "wrapped",
+    get: function get() {
+      if (this.currency.isToken) return this;
+      return CurrencyAmount.fromFractionalAmount(this.currency.wrapped, this.numerator, this.denominator);
+    }
+  }]);
+
+  return CurrencyAmount;
+}(Fraction);
+
+/**
+ * Represents the native currency of the chain on which it resides, e.g.
+ */
+
+var NativeCurrency = /*#__PURE__*/function (_AbstractCurrency) {
+  _inheritsLoose(NativeCurrency, _AbstractCurrency);
+
+  function NativeCurrency() {
+    var _this;
+
+    _this = _AbstractCurrency.apply(this, arguments) || this;
+    _this.isNative = true;
+    _this.isToken = false;
+    return _this;
+  }
+
+  return NativeCurrency;
+}(AbstractCurrency);
+
+var Price = /*#__PURE__*/function (_Fraction) {
+  _inheritsLoose(Price, _Fraction);
+
+  /**
+   * Construct a price, either with the base and quote currency amount, or the
+   * @param args
+   */
+  function Price() {
+    var _this;
+
+    var baseCurrency, quoteCurrency, denominator, numerator;
+
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    if (args.length === 4) {
+      baseCurrency = args[0];
+      quoteCurrency = args[1];
+      denominator = args[2];
+      numerator = args[3];
+    } else {
+      var result = args[0].quoteAmount.divide(args[0].baseAmount);
+      var _ref = [args[0].baseAmount.currency, args[0].quoteAmount.currency, result.denominator, result.numerator];
+      baseCurrency = _ref[0];
+      quoteCurrency = _ref[1];
+      denominator = _ref[2];
+      numerator = _ref[3];
+    }
+
+    _this = _Fraction.call(this, numerator, denominator) || this;
+    _this.baseCurrency = baseCurrency;
+    _this.quoteCurrency = quoteCurrency;
+    _this.scalar = new Fraction(JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(baseCurrency.decimals)), JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(quoteCurrency.decimals)));
+    return _this;
+  }
+  /**
+   * Flip the price, switching the base and quote currency
+   */
+
+
+  var _proto = Price.prototype;
+
+  _proto.invert = function invert() {
+    return new Price(this.quoteCurrency, this.baseCurrency, this.numerator, this.denominator);
+  }
+  /**
+   * Multiply the price by another price, returning a new price. The other price must have the same base currency as this price's quote currency
+   * @param other the other price
+   */
+  ;
+
+  _proto.multiply = function multiply(other) {
+    !this.quoteCurrency.equals(other.baseCurrency) ?  invariant(false, 'TOKEN')  : void 0;
+
+    var fraction = _Fraction.prototype.multiply.call(this, other);
+
+    return new Price(this.baseCurrency, other.quoteCurrency, fraction.denominator, fraction.numerator);
+  }
+  /**
+   * Return the amount of quote currency corresponding to a given amount of the base currency
+   * @param currencyAmount the amount of base currency to quote against the price
+   */
+  ;
+
+  _proto.quote = function quote(currencyAmount) {
+    !currencyAmount.currency.equals(this.baseCurrency) ?  invariant(false, 'TOKEN')  : void 0;
+
+    var result = _Fraction.prototype.multiply.call(this, currencyAmount);
+
+    return CurrencyAmount.fromFractionalAmount(this.quoteCurrency, result.numerator, result.denominator);
+  }
+  /**
+   * Get the value scaled by decimals for formatting
+   * @private
+   */
+  ;
+
+  _proto.toSignificant = function toSignificant(significantDigits, format, rounding) {
+    if (significantDigits === void 0) {
+      significantDigits = 6;
+    }
+
+    return this.adjustedForDecimals.toSignificant(significantDigits, format, rounding);
+  };
+
+  _proto.toFixed = function toFixed(decimalPlaces, format, rounding) {
+    if (decimalPlaces === void 0) {
+      decimalPlaces = 4;
+    }
+
+    return this.adjustedForDecimals.toFixed(decimalPlaces, format, rounding);
+  };
+
+  _createClass(Price, [{
+    key: "adjustedForDecimals",
+    get: function get() {
+      return _Fraction.prototype.multiply.call(this, this.scalar);
+    }
+  }]);
+
+  return Price;
+}(Fraction);
+
+var _100_PERCENT = /*#__PURE__*/new Fraction(_100);
+
+var Percent = /*#__PURE__*/function (_Fraction) {
+  _inheritsLoose(Percent, _Fraction);
+
+  function Percent() {
+    return _Fraction.apply(this, arguments) || this;
+  }
+
+  var _proto = Percent.prototype;
+
+  _proto.toSignificant = function toSignificant(significantDigits, format, rounding) {
+    if (significantDigits === void 0) {
+      significantDigits = 5;
+    }
+
+    return this.multiply(_100_PERCENT).toSignificant(significantDigits, format, rounding);
+  };
+
+  _proto.toFixed = function toFixed(decimalPlaces, format, rounding) {
+    if (decimalPlaces === void 0) {
+      decimalPlaces = 2;
+    }
+
+    return this.multiply(_100_PERCENT).toFixed(decimalPlaces, format, rounding);
+  };
+
+  return Percent;
+}(Fraction);
+
 function validateSolidityTypeInstance(value, solidityType) {
   !JSBI.greaterThanOrEqual(value, ZERO) ?  invariant(false, value + " is not a " + solidityType + ".")  : void 0;
   !JSBI.lessThanOrEqual(value, SOLIDITY_TYPE_MAXIMA[solidityType]) ?  invariant(false, value + " is not a " + solidityType + ".")  : void 0;
@@ -319,7 +741,7 @@ function validateAndParseAddress(address$1) {
   }
 }
 function parseBigintIsh(bigintIsh) {
-  return bigintIsh instanceof JSBI ? bigintIsh : typeof bigintIsh === 'bigint' ? JSBI.BigInt(bigintIsh.toString()) : JSBI.BigInt(bigintIsh);
+  return bigintIsh instanceof JSBI ? bigintIsh : typeof bigintIsh === 'bigint' ? JSBI.BigInt(bigintIsh) : JSBI.BigInt(bigintIsh);
 }
 function estimatedGasForMethod(methodName, numHops) {
   if (methodName === void 0) {
@@ -352,7 +774,7 @@ function calculateMargin(value, margin) {
 } // mock the on-chain sqrt function
 
 function sqrt(y) {
-  validateSolidityTypeInstance(y, SolidityType.uint256);
+  validateSolidityTypeInstance(y, exports.SolidityType.uint256);
   var z = ZERO;
   var x;
 
@@ -404,45 +826,46 @@ function sortedInsert(items, add, maxSize, comparator) {
     return isFull ? items.pop() : null;
   }
 }
+var computePairAddress = function computePairAddress(_ref) {
+  var exchange = _ref.exchange,
+      tokenA = _ref.tokenA,
+      tokenB = _ref.tokenB;
 
-/**
- * A currency is any fungible financial instrument on Ethereum, including Ether and all ERC20 tokens.
- *
- * The only instance of the base class `Currency` is Ether.
- */
+  var _ref2 = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA],
+      token0 = _ref2[0],
+      token1 = _ref2[1]; // does safety checks
 
-var Currency =
-/**
- * Constructs an instance of the base class `Currency`. The only instance of the base class `Currency` is `Currency.ETHER`.
- * @param decimals decimals of the currency
- * @param symbol symbol of the currency
- * @param name of the currency
- */
-function Currency(decimals, symbol, name) {
-  validateSolidityTypeInstance(JSBI.BigInt(decimals), SolidityType.uint8);
-  this.decimals = decimals;
-  this.symbol = symbol;
-  this.name = name;
+
+  return address.getCreate2Address(FACTORY_ADDRESS[exchange], solidity.keccak256(['bytes'], [solidity.pack(['address', 'address'], [token0.address, token1.address])]), INIT_CODE_HASH[exchange]);
 };
 /**
- * The only instance of the base class `Currency`.
+ * Returns the percent difference between the mid price and the execution price, i.e. price impact.
+ * @param midPrice mid price before the trade
+ * @param inputAmount the input amount of the trade
+ * @param outputAmount the output amount of the trade
  */
 
-Currency.ETHER = /*#__PURE__*/new Currency(18, 'ETH', 'Ether');
-var ETHER = Currency.ETHER;
+function computePriceImpact(midPrice, inputAmount, outputAmount) {
+  var quotedOutputAmount = midPrice.quote(inputAmount); // calculate price impact := (exactQuote - outputAmount) / exactQuote
+
+  var priceImpact = quotedOutputAmount.subtract(outputAmount).divide(quotedOutputAmount);
+  return new Percent(priceImpact.numerator, priceImpact.denominator);
+}
 
 var _WETH;
 /**
  * Represents an ERC20 token with a unique address and some metadata.
  */
 
-var Token = /*#__PURE__*/function (_Currency) {
-  _inheritsLoose(Token, _Currency);
+var Token = /*#__PURE__*/function (_AbstractCurrency) {
+  _inheritsLoose(Token, _AbstractCurrency);
 
   function Token(chainId, address, decimals, symbol, name) {
     var _this;
 
-    _this = _Currency.call(this, decimals, symbol, name) || this;
+    _this = _AbstractCurrency.call(this, chainId, decimals, symbol, name) || this;
+    _this.isNative = false;
+    _this.isToken = true;
     _this.chainId = chainId;
     _this.address = validateAndParseAddress(address);
     return _this;
@@ -456,12 +879,7 @@ var Token = /*#__PURE__*/function (_Currency) {
   var _proto = Token.prototype;
 
   _proto.equals = function equals(other) {
-    // short circuit on reference equality
-    if (this === other) {
-      return true;
-    }
-
-    return this.chainId === other.chainId && this.address === other.address;
+    return other.isToken && this.chainId === other.chainId && this.address === other.address;
   }
   /**
    * Returns true if the address of this token sorts before the address of the other token
@@ -475,10 +893,21 @@ var Token = /*#__PURE__*/function (_Currency) {
     !(this.chainId === other.chainId) ?  invariant(false, 'CHAIN_IDS')  : void 0;
     !(this.address !== other.address) ?  invariant(false, 'ADDRESSES')  : void 0;
     return this.address.toLowerCase() < other.address.toLowerCase();
-  };
+  }
+  /**
+   * Return this token, which does not need to be wrapped
+   */
+  ;
+
+  _createClass(Token, [{
+    key: "wrapped",
+    get: function get() {
+      return this;
+    }
+  }]);
 
   return Token;
-}(Currency);
+}(AbstractCurrency);
 /**
  * Compares two currencies for equality
  */
@@ -496,346 +925,21 @@ function currencyEquals(currencyA, currencyB) {
 }
 var WETH = (_WETH = {}, _WETH[exports.ChainId.MAINNET] = /*#__PURE__*/new Token(exports.ChainId.MAINNET, '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 18, 'WETH', 'Wrapped Ether'), _WETH[exports.ChainId.HARDHAT] = /*#__PURE__*/new Token(exports.ChainId.HARDHAT, '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 18, 'WETH', 'Wrapped Ether'), _WETH[exports.ChainId.ROPSTEN] = /*#__PURE__*/new Token(exports.ChainId.ROPSTEN, '0xc778417E063141139Fce010982780140Aa0cD5Ab', 18, 'WETH', 'Wrapped Ether'), _WETH[exports.ChainId.RINKEBY] = /*#__PURE__*/new Token(exports.ChainId.RINKEBY, '0xc778417E063141139Fce010982780140Aa0cD5Ab', 18, 'WETH', 'Wrapped Ether'), _WETH[exports.ChainId.GÖRLI] = /*#__PURE__*/new Token(exports.ChainId.GÖRLI, '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6', 18, 'WETH', 'Wrapped Ether'), _WETH[exports.ChainId.KOVAN] = /*#__PURE__*/new Token(exports.ChainId.KOVAN, '0xd0A1E359811322d97991E03f863a0C30C2cF029C', 18, 'WETH', 'Wrapped Ether'), _WETH);
 
-var _toSignificantRoundin, _toFixedRounding;
-var Decimal = /*#__PURE__*/toFormat(_Decimal);
-var Big = /*#__PURE__*/toFormat(_Big);
-var toSignificantRounding = (_toSignificantRoundin = {}, _toSignificantRoundin[exports.Rounding.ROUND_DOWN] = Decimal.ROUND_DOWN, _toSignificantRoundin[exports.Rounding.ROUND_HALF_UP] = Decimal.ROUND_HALF_UP, _toSignificantRoundin[exports.Rounding.ROUND_UP] = Decimal.ROUND_UP, _toSignificantRoundin);
-var toFixedRounding = (_toFixedRounding = {}, _toFixedRounding[exports.Rounding.ROUND_DOWN] = 0, _toFixedRounding[exports.Rounding.ROUND_HALF_UP] = 1, _toFixedRounding[exports.Rounding.ROUND_UP] = 3, _toFixedRounding);
-var Fraction = /*#__PURE__*/function () {
-  function Fraction(numerator, denominator) {
-    if (denominator === void 0) {
-      denominator = ONE;
-    }
-
-    this.numerator = parseBigintIsh(numerator);
-    this.denominator = parseBigintIsh(denominator);
-  } // performs floor division
-
-
-  var _proto = Fraction.prototype;
-
-  _proto.invert = function invert() {
-    return new Fraction(this.denominator, this.numerator);
-  };
-
-  _proto.add = function add(other) {
-    var otherParsed = other instanceof Fraction ? other : new Fraction(parseBigintIsh(other));
-
-    if (JSBI.equal(this.denominator, otherParsed.denominator)) {
-      return new Fraction(JSBI.add(this.numerator, otherParsed.numerator), this.denominator);
-    }
-
-    return new Fraction(JSBI.add(JSBI.multiply(this.numerator, otherParsed.denominator), JSBI.multiply(otherParsed.numerator, this.denominator)), JSBI.multiply(this.denominator, otherParsed.denominator));
-  };
-
-  _proto.subtract = function subtract(other) {
-    var otherParsed = other instanceof Fraction ? other : new Fraction(parseBigintIsh(other));
-
-    if (JSBI.equal(this.denominator, otherParsed.denominator)) {
-      return new Fraction(JSBI.subtract(this.numerator, otherParsed.numerator), this.denominator);
-    }
-
-    return new Fraction(JSBI.subtract(JSBI.multiply(this.numerator, otherParsed.denominator), JSBI.multiply(otherParsed.numerator, this.denominator)), JSBI.multiply(this.denominator, otherParsed.denominator));
-  };
-
-  _proto.lessThan = function lessThan(other) {
-    var otherParsed = other instanceof Fraction ? other : new Fraction(parseBigintIsh(other));
-    return JSBI.lessThan(JSBI.multiply(this.numerator, otherParsed.denominator), JSBI.multiply(otherParsed.numerator, this.denominator));
-  };
-
-  _proto.equalTo = function equalTo(other) {
-    var otherParsed = other instanceof Fraction ? other : new Fraction(parseBigintIsh(other));
-    return JSBI.equal(JSBI.multiply(this.numerator, otherParsed.denominator), JSBI.multiply(otherParsed.numerator, this.denominator));
-  };
-
-  _proto.greaterThan = function greaterThan(other) {
-    var otherParsed = other instanceof Fraction ? other : new Fraction(parseBigintIsh(other));
-    return JSBI.greaterThan(JSBI.multiply(this.numerator, otherParsed.denominator), JSBI.multiply(otherParsed.numerator, this.denominator));
-  };
-
-  _proto.multiply = function multiply(other) {
-    var otherParsed = other instanceof Fraction ? other : new Fraction(parseBigintIsh(other));
-    return new Fraction(JSBI.multiply(this.numerator, otherParsed.numerator), JSBI.multiply(this.denominator, otherParsed.denominator));
-  };
-
-  _proto.divide = function divide(other) {
-    var otherParsed = other instanceof Fraction ? other : new Fraction(parseBigintIsh(other));
-    return new Fraction(JSBI.multiply(this.numerator, otherParsed.denominator), JSBI.multiply(this.denominator, otherParsed.numerator));
-  };
-
-  _proto.toSignificant = function toSignificant(significantDigits, format, rounding) {
-    if (format === void 0) {
-      format = {
-        groupSeparator: ''
-      };
-    }
-
-    if (rounding === void 0) {
-      rounding = exports.Rounding.ROUND_HALF_UP;
-    }
-
-    !Number.isInteger(significantDigits) ?  invariant(false, significantDigits + " is not an integer.")  : void 0;
-    !(significantDigits > 0) ?  invariant(false, significantDigits + " is not positive.")  : void 0;
-    Decimal.set({
-      precision: significantDigits + 1,
-      rounding: toSignificantRounding[rounding]
-    });
-    var quotient = new Decimal(this.numerator.toString()).div(this.denominator.toString()).toSignificantDigits(significantDigits);
-    return quotient.toFormat(quotient.decimalPlaces(), format);
-  };
-
-  _proto.toFixed = function toFixed(decimalPlaces, format, rounding) {
-    if (format === void 0) {
-      format = {
-        groupSeparator: ''
-      };
-    }
-
-    if (rounding === void 0) {
-      rounding = exports.Rounding.ROUND_HALF_UP;
-    }
-
-    !Number.isInteger(decimalPlaces) ?  invariant(false, decimalPlaces + " is not an integer.")  : void 0;
-    !(decimalPlaces >= 0) ?  invariant(false, decimalPlaces + " is negative.")  : void 0;
-    Big.DP = decimalPlaces;
-    Big.RM = toFixedRounding[rounding];
-    return new Big(this.numerator.toString()).div(this.denominator.toString()).toFormat(decimalPlaces, format);
-  };
-
-  _createClass(Fraction, [{
-    key: "quotient",
-    get: function get() {
-      return JSBI.divide(this.numerator, this.denominator);
-    } // remainder after floor division
-
-  }, {
-    key: "remainder",
-    get: function get() {
-      return new Fraction(JSBI.remainder(this.numerator, this.denominator), this.denominator);
-    }
-  }]);
-
-  return Fraction;
-}();
-
-var Big$1 = /*#__PURE__*/toFormat(_Big);
-var CurrencyAmount = /*#__PURE__*/function (_Fraction) {
-  _inheritsLoose(CurrencyAmount, _Fraction);
-
-  // amount _must_ be raw, i.e. in the native representation
-  function CurrencyAmount(currency, amount) {
-    var _this;
-
-    var parsedAmount = parseBigintIsh(amount);
-    validateSolidityTypeInstance(parsedAmount, SolidityType.uint256);
-    _this = _Fraction.call(this, parsedAmount, JSBI.exponentiate(TEN, JSBI.BigInt(currency.decimals))) || this;
-    _this.currency = currency;
-    return _this;
-  }
-  /**
-   * Helper that calls the constructor with the ETHER currency
-   * @param amount ether amount in wei
-   */
-
-
-  CurrencyAmount.ether = function ether(amount) {
-    return new CurrencyAmount(ETHER, amount);
-  };
-
-  var _proto = CurrencyAmount.prototype;
-
-  _proto.add = function add(other) {
-    !currencyEquals(this.currency, other.currency) ?  invariant(false, 'TOKEN')  : void 0;
-    return new CurrencyAmount(this.currency, JSBI.add(this.raw, other.raw));
-  };
-
-  _proto.subtract = function subtract(other) {
-    !currencyEquals(this.currency, other.currency) ?  invariant(false, 'TOKEN')  : void 0;
-    return new CurrencyAmount(this.currency, JSBI.subtract(this.raw, other.raw));
-  };
-
-  _proto.toSignificant = function toSignificant(significantDigits, format, rounding) {
-    if (significantDigits === void 0) {
-      significantDigits = 6;
-    }
-
-    if (rounding === void 0) {
-      rounding = exports.Rounding.ROUND_DOWN;
-    }
-
-    return _Fraction.prototype.toSignificant.call(this, significantDigits, format, rounding);
-  };
-
-  _proto.toFixed = function toFixed(decimalPlaces, format, rounding) {
-    if (decimalPlaces === void 0) {
-      decimalPlaces = this.currency.decimals;
-    }
-
-    if (rounding === void 0) {
-      rounding = exports.Rounding.ROUND_DOWN;
-    }
-
-    !(decimalPlaces <= this.currency.decimals) ?  invariant(false, 'DECIMALS')  : void 0;
-    return _Fraction.prototype.toFixed.call(this, decimalPlaces, format, rounding);
-  };
-
-  _proto.toExact = function toExact(format) {
-    if (format === void 0) {
-      format = {
-        groupSeparator: ''
-      };
-    }
-
-    Big$1.DP = this.currency.decimals;
-    return new Big$1(this.numerator.toString()).div(this.denominator.toString()).toFormat(format);
-  };
-
-  _createClass(CurrencyAmount, [{
-    key: "raw",
-    get: function get() {
-      return this.numerator;
-    }
-  }]);
-
-  return CurrencyAmount;
-}(Fraction);
-
-var TokenAmount = /*#__PURE__*/function (_CurrencyAmount) {
-  _inheritsLoose(TokenAmount, _CurrencyAmount);
-
-  // amount _must_ be raw, i.e. in the native representation
-  function TokenAmount(token, amount) {
-    var _this;
-
-    _this = _CurrencyAmount.call(this, token, amount) || this;
-    _this.token = token;
-    return _this;
-  }
-
-  var _proto = TokenAmount.prototype;
-
-  _proto.add = function add(other) {
-    !this.token.equals(other.token) ?  invariant(false, 'TOKEN')  : void 0;
-    return new TokenAmount(this.token, JSBI.add(this.raw, other.raw));
-  };
-
-  _proto.subtract = function subtract(other) {
-    !this.token.equals(other.token) ?  invariant(false, 'TOKEN')  : void 0;
-    return new TokenAmount(this.token, JSBI.subtract(this.raw, other.raw));
-  };
-
-  return TokenAmount;
-}(CurrencyAmount);
-
-var Price = /*#__PURE__*/function (_Fraction) {
-  _inheritsLoose(Price, _Fraction);
-
-  // denominator and numerator _must_ be raw, i.e. in the native representation
-  function Price(baseCurrency, quoteCurrency, denominator, numerator) {
-    var _this;
-
-    _this = _Fraction.call(this, numerator, denominator) || this;
-    _this.baseCurrency = baseCurrency;
-    _this.quoteCurrency = quoteCurrency;
-    _this.scalar = new Fraction(JSBI.exponentiate(TEN, JSBI.BigInt(baseCurrency.decimals)), JSBI.exponentiate(TEN, JSBI.BigInt(quoteCurrency.decimals)));
-    return _this;
-  }
-
-  Price.fromRoute = function fromRoute(route) {
-    var prices = [];
-
-    for (var _iterator = _createForOfIteratorHelperLoose(route.pairs.entries()), _step; !(_step = _iterator()).done;) {
-      var _step$value = _step.value,
-          i = _step$value[0],
-          pair = _step$value[1];
-      prices.push(route.path[i].equals(pair.token0) ? new Price(pair.reserve0.currency, pair.reserve1.currency, pair.reserve0.raw, pair.reserve1.raw) : new Price(pair.reserve1.currency, pair.reserve0.currency, pair.reserve1.raw, pair.reserve0.raw));
-    }
-
-    return prices.slice(1).reduce(function (accumulator, currentValue) {
-      return accumulator.multiply(currentValue);
-    }, prices[0]);
-  };
-
-  var _proto = Price.prototype;
-
-  _proto.invert = function invert() {
-    return new Price(this.quoteCurrency, this.baseCurrency, this.numerator, this.denominator);
-  };
-
-  _proto.multiply = function multiply(other) {
-    !currencyEquals(this.quoteCurrency, other.baseCurrency) ?  invariant(false, 'TOKEN')  : void 0;
-
-    var fraction = _Fraction.prototype.multiply.call(this, other);
-
-    return new Price(this.baseCurrency, other.quoteCurrency, fraction.denominator, fraction.numerator);
-  } // performs floor division on overflow
-  ;
-
-  _proto.quote = function quote(currencyAmount) {
-    !currencyEquals(currencyAmount.currency, this.baseCurrency) ?  invariant(false, 'TOKEN')  : void 0;
-
-    if (this.quoteCurrency instanceof Token) {
-      return new TokenAmount(this.quoteCurrency, _Fraction.prototype.multiply.call(this, currencyAmount.raw).quotient);
-    }
-
-    return CurrencyAmount.ether(_Fraction.prototype.multiply.call(this, currencyAmount.raw).quotient);
-  };
-
-  _proto.toSignificant = function toSignificant(significantDigits, format, rounding) {
-    if (significantDigits === void 0) {
-      significantDigits = 6;
-    }
-
-    return this.adjusted.toSignificant(significantDigits, format, rounding);
-  };
-
-  _proto.toFixed = function toFixed(decimalPlaces, format, rounding) {
-    if (decimalPlaces === void 0) {
-      decimalPlaces = 4;
-    }
-
-    return this.adjusted.toFixed(decimalPlaces, format, rounding);
-  };
-
-  _createClass(Price, [{
-    key: "raw",
-    get: function get() {
-      return new Fraction(this.numerator, this.denominator);
-    }
-  }, {
-    key: "adjusted",
-    get: function get() {
-      return _Fraction.prototype.multiply.call(this, this.scalar);
-    }
-  }]);
-
-  return Price;
-}(Fraction);
-
-var PAIR_ADDRESS_CACHE = {};
 var Pair = /*#__PURE__*/function () {
-  function Pair(tokenAmountA, tokenAmountB, exchange) {
-    var tokenAmounts = tokenAmountA.token.sortsBefore(tokenAmountB.token) // does safety checks
-    ? [tokenAmountA, tokenAmountB] : [tokenAmountB, tokenAmountA];
-    this.liquidityToken = new Token(tokenAmounts[0].token.chainId, Pair.getAddress(tokenAmounts[0].token, tokenAmounts[1].token, exchange), 18, 'UNI-V2', 'Uniswap V2');
+  function Pair(currencyAmountA, tokenAmountB, exchange) {
+    var tokenAmounts = currencyAmountA.currency.sortsBefore(tokenAmountB.currency) // does safety checks
+    ? [currencyAmountA, tokenAmountB] : [tokenAmountB, currencyAmountA];
+    this.liquidityToken = new Token(tokenAmounts[0].currency.chainId, Pair.getAddress(tokenAmounts[0].currency, tokenAmounts[1].currency, exchange), 18, 'UNI-V2', 'Uniswap V2');
     this.tokenAmounts = tokenAmounts;
     this.exchange = exchange;
   }
 
   Pair.getAddress = function getAddress(tokenA, tokenB, exchange) {
-    var _PAIR_ADDRESS_CACHE, _PAIR_ADDRESS_CACHE2;
-
-    var tokens = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA]; // does safety checks
-
-    var exchangeIdentifier = '|' + exchange;
-
-    if (((_PAIR_ADDRESS_CACHE = PAIR_ADDRESS_CACHE) === null || _PAIR_ADDRESS_CACHE === void 0 ? void 0 : (_PAIR_ADDRESS_CACHE2 = _PAIR_ADDRESS_CACHE[tokens[0].address + exchangeIdentifier]) === null || _PAIR_ADDRESS_CACHE2 === void 0 ? void 0 : _PAIR_ADDRESS_CACHE2[tokens[1].address]) === undefined) {
-      var _PAIR_ADDRESS_CACHE3, _extends2, _extends3;
-
-      PAIR_ADDRESS_CACHE = _extends({}, PAIR_ADDRESS_CACHE, (_extends3 = {}, _extends3[tokens[0].address + exchangeIdentifier] = _extends({}, (_PAIR_ADDRESS_CACHE3 = PAIR_ADDRESS_CACHE) === null || _PAIR_ADDRESS_CACHE3 === void 0 ? void 0 : _PAIR_ADDRESS_CACHE3[tokens[0].address + exchangeIdentifier], (_extends2 = {}, _extends2[tokens[1].address] = address.getCreate2Address(FACTORY_ADDRESS[exchange], solidity.keccak256(['bytes'], [solidity.pack(['address', 'address'], [tokens[0].address, tokens[1].address])]), INIT_CODE_HASH[exchange]), _extends2)), _extends3));
-    }
-
-    return PAIR_ADDRESS_CACHE[tokens[0].address + exchangeIdentifier][tokens[1].address];
+    return computePairAddress({
+      exchange: exchange,
+      tokenA: tokenA,
+      tokenB: tokenB
+    });
   }
   /**
    * Returns true if the token is either token0 or token1
@@ -872,20 +976,20 @@ var Pair = /*#__PURE__*/function () {
   };
 
   _proto.getOutputAmount = function getOutputAmount(inputAmount) {
-    !this.involvesToken(inputAmount.token) ?  invariant(false, 'TOKEN')  : void 0;
+    !this.involvesToken(inputAmount.currency) ?  invariant(false, 'TOKEN')  : void 0;
 
-    if (JSBI.equal(this.reserve0.raw, ZERO) || JSBI.equal(this.reserve1.raw, ZERO)) {
+    if (JSBI.equal(this.reserve0.quotient, ZERO) || JSBI.equal(this.reserve1.quotient, ZERO)) {
       throw new InsufficientReservesError();
     }
 
-    var inputReserve = this.reserveOf(inputAmount.token);
-    var outputReserve = this.reserveOf(inputAmount.token.equals(this.token0) ? this.token1 : this.token0);
-    var inputAmountWithFee = JSBI.multiply(inputAmount.raw, _997);
-    var numerator = JSBI.multiply(inputAmountWithFee, outputReserve.raw);
-    var denominator = JSBI.add(JSBI.multiply(inputReserve.raw, _1000), inputAmountWithFee);
-    var outputAmount = new TokenAmount(inputAmount.token.equals(this.token0) ? this.token1 : this.token0, JSBI.divide(numerator, denominator));
+    var inputReserve = this.reserveOf(inputAmount.currency);
+    var outputReserve = this.reserveOf(inputAmount.currency.equals(this.token0) ? this.token1 : this.token0);
+    var inputAmountWithFee = JSBI.multiply(inputAmount.quotient, _997);
+    var numerator = JSBI.multiply(inputAmountWithFee, outputReserve.quotient);
+    var denominator = JSBI.add(JSBI.multiply(inputReserve.quotient, _1000), inputAmountWithFee);
+    var outputAmount = CurrencyAmount.fromRawAmount(inputAmount.currency.equals(this.token0) ? this.token1 : this.token0, JSBI.divide(numerator, denominator));
 
-    if (JSBI.equal(outputAmount.raw, ZERO)) {
+    if (JSBI.equal(outputAmount.quotient, ZERO)) {
       throw new InsufficientInputAmountError();
     }
 
@@ -893,32 +997,32 @@ var Pair = /*#__PURE__*/function () {
   };
 
   _proto.getInputAmount = function getInputAmount(outputAmount) {
-    !this.involvesToken(outputAmount.token) ?  invariant(false, 'TOKEN')  : void 0;
+    !this.involvesToken(outputAmount.currency) ?  invariant(false, 'TOKEN')  : void 0;
 
-    if (JSBI.equal(this.reserve0.raw, ZERO) || JSBI.equal(this.reserve1.raw, ZERO) || JSBI.greaterThanOrEqual(outputAmount.raw, this.reserveOf(outputAmount.token).raw)) {
+    if (JSBI.equal(this.reserve0.quotient, ZERO) || JSBI.equal(this.reserve1.quotient, ZERO) || JSBI.greaterThanOrEqual(outputAmount.quotient, this.reserveOf(outputAmount.currency).quotient)) {
       throw new InsufficientReservesError();
     }
 
-    var outputReserve = this.reserveOf(outputAmount.token);
-    var inputReserve = this.reserveOf(outputAmount.token.equals(this.token0) ? this.token1 : this.token0);
-    var numerator = JSBI.multiply(JSBI.multiply(inputReserve.raw, outputAmount.raw), _1000);
-    var denominator = JSBI.multiply(JSBI.subtract(outputReserve.raw, outputAmount.raw), _997);
-    var inputAmount = new TokenAmount(outputAmount.token.equals(this.token0) ? this.token1 : this.token0, JSBI.add(JSBI.divide(numerator, denominator), ONE));
+    var outputReserve = this.reserveOf(outputAmount.currency);
+    var inputReserve = this.reserveOf(outputAmount.currency.equals(this.token0) ? this.token1 : this.token0);
+    var numerator = JSBI.multiply(JSBI.multiply(inputReserve.quotient, outputAmount.quotient), _1000);
+    var denominator = JSBI.multiply(JSBI.subtract(outputReserve.quotient, outputAmount.quotient), _997);
+    var inputAmount = CurrencyAmount.fromRawAmount(outputAmount.currency.equals(this.token0) ? this.token1 : this.token0, JSBI.add(JSBI.divide(numerator, denominator), ONE));
     return [inputAmount, new Pair(inputReserve.add(inputAmount), outputReserve.subtract(outputAmount), this.exchange)];
   };
 
   _proto.getLiquidityMinted = function getLiquidityMinted(totalSupply, tokenAmountA, tokenAmountB) {
-    !totalSupply.token.equals(this.liquidityToken) ?  invariant(false, 'LIQUIDITY')  : void 0;
-    var tokenAmounts = tokenAmountA.token.sortsBefore(tokenAmountB.token) // does safety checks
+    !totalSupply.currency.equals(this.liquidityToken) ?  invariant(false, 'LIQUIDITY')  : void 0;
+    var tokenAmounts = tokenAmountA.currency.sortsBefore(tokenAmountB.currency) // does safety checks
     ? [tokenAmountA, tokenAmountB] : [tokenAmountB, tokenAmountA];
-    !(tokenAmounts[0].token.equals(this.token0) && tokenAmounts[1].token.equals(this.token1)) ?  invariant(false, 'TOKEN')  : void 0;
+    !(tokenAmounts[0].currency.equals(this.token0) && tokenAmounts[1].currency.equals(this.token1)) ?  invariant(false, 'TOKEN')  : void 0;
     var liquidity;
 
-    if (JSBI.equal(totalSupply.raw, ZERO)) {
-      liquidity = JSBI.subtract(sqrt(JSBI.multiply(tokenAmounts[0].raw, tokenAmounts[1].raw)), MINIMUM_LIQUIDITY);
+    if (JSBI.equal(totalSupply.quotient, ZERO)) {
+      liquidity = JSBI.subtract(sqrt(JSBI.multiply(tokenAmounts[0].quotient, tokenAmounts[1].quotient)), MINIMUM_LIQUIDITY);
     } else {
-      var amount0 = JSBI.divide(JSBI.multiply(tokenAmounts[0].raw, totalSupply.raw), this.reserve0.raw);
-      var amount1 = JSBI.divide(JSBI.multiply(tokenAmounts[1].raw, totalSupply.raw), this.reserve1.raw);
+      var amount0 = JSBI.divide(JSBI.multiply(tokenAmounts[0].quotient, totalSupply.quotient), this.reserve0.quotient);
+      var amount1 = JSBI.divide(JSBI.multiply(tokenAmounts[1].quotient, totalSupply.quotient), this.reserve1.quotient);
       liquidity = JSBI.lessThanOrEqual(amount0, amount1) ? amount0 : amount1;
     }
 
@@ -926,7 +1030,7 @@ var Pair = /*#__PURE__*/function () {
       throw new InsufficientInputAmountError();
     }
 
-    return new TokenAmount(this.liquidityToken, liquidity);
+    return CurrencyAmount.fromRawAmount(this.liquidityToken, liquidity);
   };
 
   _proto.getLiquidityValue = function getLiquidityValue(token, totalSupply, liquidity, feeOn, kLast) {
@@ -935,26 +1039,26 @@ var Pair = /*#__PURE__*/function () {
     }
 
     !this.involvesToken(token) ?  invariant(false, 'TOKEN')  : void 0;
-    !totalSupply.token.equals(this.liquidityToken) ?  invariant(false, 'TOTAL_SUPPLY')  : void 0;
-    !liquidity.token.equals(this.liquidityToken) ?  invariant(false, 'LIQUIDITY')  : void 0;
-    !JSBI.lessThanOrEqual(liquidity.raw, totalSupply.raw) ?  invariant(false, 'LIQUIDITY')  : void 0;
+    !totalSupply.currency.equals(this.liquidityToken) ?  invariant(false, 'TOTAL_SUPPLY')  : void 0;
+    !liquidity.currency.equals(this.liquidityToken) ?  invariant(false, 'LIQUIDITY')  : void 0;
+    !JSBI.lessThanOrEqual(liquidity.quotient, totalSupply.quotient) ?  invariant(false, 'LIQUIDITY')  : void 0;
     var totalSupplyAdjusted;
 
     if (!feeOn) {
       totalSupplyAdjusted = totalSupply;
     } else {
       !!!kLast ?  invariant(false, 'K_LAST')  : void 0;
-      var kLastParsed = parseBigintIsh(kLast);
+      var kLastParsed = JSBI.BigInt(kLast);
 
       if (!JSBI.equal(kLastParsed, ZERO)) {
-        var rootK = sqrt(JSBI.multiply(this.reserve0.raw, this.reserve1.raw));
+        var rootK = sqrt(JSBI.multiply(this.reserve0.quotient, this.reserve1.quotient));
         var rootKLast = sqrt(kLastParsed);
 
         if (JSBI.greaterThan(rootK, rootKLast)) {
-          var numerator = JSBI.multiply(totalSupply.raw, JSBI.subtract(rootK, rootKLast));
+          var numerator = JSBI.multiply(totalSupply.quotient, JSBI.subtract(rootK, rootKLast));
           var denominator = JSBI.add(JSBI.multiply(rootK, FIVE), rootKLast);
           var feeLiquidity = JSBI.divide(numerator, denominator);
-          totalSupplyAdjusted = totalSupply.add(new TokenAmount(this.liquidityToken, feeLiquidity));
+          totalSupplyAdjusted = totalSupply.add(CurrencyAmount.fromRawAmount(this.liquidityToken, feeLiquidity));
         } else {
           totalSupplyAdjusted = totalSupply;
         }
@@ -963,13 +1067,14 @@ var Pair = /*#__PURE__*/function () {
       }
     }
 
-    return new TokenAmount(token, JSBI.divide(JSBI.multiply(liquidity.raw, this.reserveOf(token).raw), totalSupplyAdjusted.raw));
+    return CurrencyAmount.fromRawAmount(token, JSBI.divide(JSBI.multiply(liquidity.quotient, this.reserveOf(token).quotient), totalSupplyAdjusted.quotient));
   };
 
   _createClass(Pair, [{
     key: "token0Price",
     get: function get() {
-      return new Price(this.token0, this.token1, this.tokenAmounts[0].raw, this.tokenAmounts[1].raw);
+      var result = this.tokenAmounts[1].divide(this.tokenAmounts[0]);
+      return new Price(this.token0, this.token1, result.denominator, result.numerator);
     }
     /**
      * Returns the current mid price of the pair in terms of token1, i.e. the ratio of reserve0 to reserve1
@@ -978,7 +1083,8 @@ var Pair = /*#__PURE__*/function () {
   }, {
     key: "token1Price",
     get: function get() {
-      return new Price(this.token1, this.token0, this.tokenAmounts[1].raw, this.tokenAmounts[0].raw);
+      var result = this.tokenAmounts[0].divide(this.tokenAmounts[1]);
+      return new Price(this.token1, this.token0, result.denominator, result.numerator);
     }
   }, {
     key: "chainId",
@@ -988,12 +1094,12 @@ var Pair = /*#__PURE__*/function () {
   }, {
     key: "token0",
     get: function get() {
-      return this.tokenAmounts[0].token;
+      return this.tokenAmounts[0].currency;
     }
   }, {
     key: "token1",
     get: function get() {
-      return this.tokenAmounts[1].token;
+      return this.tokenAmounts[1].currency;
     }
   }, {
     key: "reserve0",
@@ -1012,13 +1118,16 @@ var Pair = /*#__PURE__*/function () {
 
 var Route = /*#__PURE__*/function () {
   function Route(pairs, input, output) {
+    this._midPrice = null;
     !(pairs.length > 0) ?  invariant(false, 'PAIRS')  : void 0;
+    var chainId = pairs[0].chainId;
     !pairs.every(function (pair) {
-      return pair.chainId === pairs[0].chainId;
+      return pair.chainId === chainId;
     }) ?  invariant(false, 'CHAIN_IDS')  : void 0;
-    !(input instanceof Token && pairs[0].involvesToken(input) || input === ETHER && pairs[0].involvesToken(WETH[pairs[0].chainId])) ?  invariant(false, 'INPUT')  : void 0;
-    !(typeof output === 'undefined' || output instanceof Token && pairs[pairs.length - 1].involvesToken(output) || output === ETHER && pairs[pairs.length - 1].involvesToken(WETH[pairs[0].chainId])) ?  invariant(false, 'OUTPUT')  : void 0;
-    var path = [input instanceof Token ? input : WETH[pairs[0].chainId]];
+    var wrappedInput = input.wrapped;
+    !pairs[0].involvesToken(wrappedInput) ?  invariant(false, 'INPUT')  : void 0;
+    !(typeof output === 'undefined' || pairs[pairs.length - 1].involvesToken(output.wrapped)) ?  invariant(false, 'OUTPUT')  : void 0;
+    var path = [wrappedInput];
 
     for (var _iterator = _createForOfIteratorHelperLoose(pairs.entries()), _step; !(_step = _iterator()).done;) {
       var _step$value = _step.value,
@@ -1034,12 +1143,29 @@ var Route = /*#__PURE__*/function () {
 
     this.pairs = pairs;
     this.path = path;
-    this.midPrice = Price.fromRoute(this);
     this.input = input;
-    this.output = output !== null && output !== void 0 ? output : path[path.length - 1];
+    this.output = output;
   }
 
   _createClass(Route, [{
+    key: "midPrice",
+    get: function get() {
+      if (this._midPrice !== null) return this._midPrice;
+      var prices = [];
+
+      for (var _iterator2 = _createForOfIteratorHelperLoose(this.pairs.entries()), _step2; !(_step2 = _iterator2()).done;) {
+        var _step2$value = _step2.value,
+            i = _step2$value[0],
+            pair = _step2$value[1];
+        prices.push(this.path[i].equals(pair.token0) ? new Price(pair.reserve0.currency, pair.reserve1.currency, pair.reserve0.quotient, pair.reserve1.quotient) : new Price(pair.reserve1.currency, pair.reserve0.currency, pair.reserve1.quotient, pair.reserve0.quotient));
+      }
+
+      var reduced = prices.slice(1).reduce(function (accumulator, currentValue) {
+        return accumulator.multiply(currentValue);
+      }, prices[0]);
+      return this._midPrice = new Price(this.input, this.output, reduced.denominator, reduced.numerator);
+    }
+  }, {
     key: "chainId",
     get: function get() {
       return this.pairs[0].chainId;
@@ -1049,56 +1175,48 @@ var Route = /*#__PURE__*/function () {
   return Route;
 }();
 
-var _100_PERCENT = /*#__PURE__*/new Fraction(_100);
-
-var Percent = /*#__PURE__*/function (_Fraction) {
-  _inheritsLoose(Percent, _Fraction);
-
-  function Percent() {
-    return _Fraction.apply(this, arguments) || this;
-  }
-
-  var _proto = Percent.prototype;
-
-  _proto.toSignificant = function toSignificant(significantDigits, format, rounding) {
-    if (significantDigits === void 0) {
-      significantDigits = 5;
-    }
-
-    return this.multiply(_100_PERCENT).toSignificant(significantDigits, format, rounding);
-  };
-
-  _proto.toFixed = function toFixed(decimalPlaces, format, rounding) {
-    if (decimalPlaces === void 0) {
-      decimalPlaces = 2;
-    }
-
-    return this.multiply(_100_PERCENT).toFixed(decimalPlaces, format, rounding);
-  };
-
-  return Percent;
-}(Fraction);
-
 /**
- * Returns the percent difference between the mid price and the execution price, i.e. price impact.
- * @param midPrice mid price before the trade
- * @param inputAmount the input amount of the trade
- * @param outputAmount the output amount of the trade
+ * Ether is the main usage of a 'native' currency, i.e. for Ethereum mainnet and all testnets
  */
 
-function computePriceImpact(midPrice, inputAmount, outputAmount) {
-  var exactQuote = midPrice.raw.multiply(inputAmount.raw); // calculate slippage := (exactQuote - outputAmount) / exactQuote
+var Ether = /*#__PURE__*/function (_NativeCurrency) {
+  _inheritsLoose(Ether, _NativeCurrency);
 
-  var slippage = exactQuote.subtract(outputAmount.raw).divide(exactQuote);
-  return new Percent(slippage.numerator, slippage.denominator);
-} // comparator function that allows sorting trades by their output amounts, in decreasing order, and then input amounts
+  function Ether(chainId) {
+    return _NativeCurrency.call(this, chainId, 18, 'ETH', 'Ether') || this;
+  }
+
+  Ether.onChain = function onChain(chainId) {
+    var _this$_etherCache$cha;
+
+    return (_this$_etherCache$cha = this._etherCache[chainId]) !== null && _this$_etherCache$cha !== void 0 ? _this$_etherCache$cha : this._etherCache[chainId] = new Ether(chainId);
+  };
+
+  var _proto = Ether.prototype;
+
+  _proto.equals = function equals(other) {
+    return other.isNative && other.chainId === this.chainId;
+  };
+
+  _createClass(Ether, [{
+    key: "wrapped",
+    get: function get() {
+      var weth = WETH[this.chainId];
+      !!!weth ?  invariant(false, 'WRAPPED')  : void 0;
+      return weth;
+    }
+  }]);
+
+  return Ether;
+}(NativeCurrency);
+Ether._etherCache = {};
+
 // in increasing order. i.e. the best trades have the most outputs for the least inputs and are sorted first
-
 
 function inputOutputComparator(a, b) {
   // must have same input and output token for comparison
-  !currencyEquals(a.inputAmount.currency, b.inputAmount.currency) ?  invariant(false, 'INPUT_CURRENCY')  : void 0;
-  !currencyEquals(a.outputAmount.currency, b.outputAmount.currency) ?  invariant(false, 'OUTPUT_CURRENCY')  : void 0;
+  !a.inputAmount.currency.equals(b.inputAmount.currency) ?  invariant(false, 'INPUT_CURRENCY')  : void 0;
+  !a.outputAmount.currency.equals(b.outputAmount.currency) ?  invariant(false, 'OUTPUT_CURRENCY')  : void 0;
 
   if (a.outputAmount.equalTo(b.outputAmount)) {
     if (a.inputAmount.equalTo(b.inputAmount)) {
@@ -1139,45 +1257,30 @@ function tradeComparator(a, b) {
   return a.route.path.length - b.route.path.length;
 }
 /**
- * Given a currency amount and a chain ID, returns the equivalent representation as the token amount.
- * In other words, if the currency is ETHER, returns the WETH token amount for the given chain. Otherwise, returns
- * the input currency amount.
- */
-
-function wrappedAmount(currencyAmount, chainId) {
-  if (currencyAmount instanceof TokenAmount) return currencyAmount;
-  if (currencyAmount.currency === ETHER) return new TokenAmount(WETH[chainId], currencyAmount.raw);
-    invariant(false, 'CURRENCY')  ;
-}
-
-function wrappedCurrency(currency, chainId) {
-  if (currency instanceof Token) return currency;
-  if (currency === ETHER) return WETH[chainId];
-    invariant(false, 'CURRENCY')  ;
-}
-/**
  * Represents a trade executed against a list of pairs.
  * Does not account for slippage, i.e. trades that front run this trade and move the price.
  */
 
-
 var Trade = /*#__PURE__*/function () {
   function Trade(route, amount, tradeType, gasPriceToBeat, minerBribeMargin) {
+    this.route = route;
+    this.tradeType = tradeType;
     var amounts = new Array(route.path.length);
     var nextPairs = new Array(route.pairs.length);
-    var etherIn = route.input === ETHER;
-    var etherOut = route.output === ETHER;
+    var etherIn = route.input.isNative;
+    var etherOut = route.output.isNative;
     var methodName = Trade.methodNameForTradeType(tradeType, etherIn, etherOut);
     var estimatedGas = estimatedGasForMethod(methodName, (route.path.length - 1).toString());
     var minerBribe = calculateMinerBribe(gasPriceToBeat, estimatedGas, minerBribeMargin);
     this.estimatedGas = estimatedGas.toString();
-    this.minerBribe = CurrencyAmount.ether(minerBribe);
-    var modifiedInput = wrappedAmount(amount, route.chainId);
-    var modifiedOutput = wrappedAmount(amount, route.chainId);
+    this.minerBribe = CurrencyAmount.fromRawAmount(WETH[route.chainId], minerBribe); // this.minerBribe = CurrencyAmount.ether(minerBribe)
+
+    var modifiedInput = amount.wrapped;
+    var modifiedOutput = amount.wrapped;
 
     if (tradeType === exports.TradeType.EXACT_INPUT) {
       !currencyEquals(amount.currency, route.input) ?  invariant(false, 'INPUT')  : void 0;
-      amounts[0] = wrappedAmount(amount, route.chainId);
+      amounts[0] = amount.wrapped;
 
       for (var i = 0; i < route.path.length - 1; i++) {
         var pair = route.pairs[i];
@@ -1187,7 +1290,7 @@ var Trade = /*#__PURE__*/function () {
         if (etherIn && i === 0) {
           // reduce the inputAmount by this.minerBribe
           !inputAmount.greaterThan(this.minerBribe) ?  invariant(false, "Miner bribe " + this.minerBribe.toExact() + " is greater than input ETH " + inputAmount.toExact())  : void 0;
-          var modifiedAmount = inputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId)); // console.log('original amount in', inputAmount.toExact())
+          var modifiedAmount = inputAmount.subtract(this.minerBribe); // console.log('original amount in', inputAmount.toExact())
           // console.log('modified amount in', modifiedAmount.toExact())
 
           inputAmount = modifiedAmount;
@@ -1204,7 +1307,7 @@ var Trade = /*#__PURE__*/function () {
           // reduce the outputAmount by this.minerBribe
           !outputAmount.greaterThan(this.minerBribe) ?  invariant(false, "Miner bribe " + this.minerBribe.toExact() + " is greater than output ETH " + outputAmount.toExact())  : void 0;
 
-          var _modifiedAmount = outputAmount.subtract(wrappedAmount(this.minerBribe, route.chainId)); // console.log('original amount out', outputAmount.toExact())
+          var _modifiedAmount = outputAmount.subtract(this.minerBribe); // console.log('original amount out', outputAmount.toExact())
           // console.log('modified amount out', modifiedAmount.toExact())
 
 
@@ -1219,7 +1322,7 @@ var Trade = /*#__PURE__*/function () {
       }
     } else {
       !currencyEquals(amount.currency, route.output) ?  invariant(false, 'OUTPUT')  : void 0;
-      amounts[amounts.length - 1] = wrappedAmount(amount, route.chainId);
+      amounts[amounts.length - 1] = amount.wrapped;
 
       for (var _i = route.path.length - 1; _i > 0; _i--) {
         var _outputAmount = amounts[_i]; // if the output is ETH, calculate the input amount with the
@@ -1227,7 +1330,7 @@ var Trade = /*#__PURE__*/function () {
 
         if (etherOut && _i === route.path.length - 1) {
           // increase the outputAmount by this.minerBribe
-          var _modifiedAmount2 = _outputAmount.add(wrappedAmount(this.minerBribe, route.chainId)); // console.log('original amount out', outputAmount.toExact())
+          var _modifiedAmount2 = _outputAmount.add(this.minerBribe); // console.log('original amount out', outputAmount.toExact())
           // console.log('modified amount out', modifiedAmount.toExact())
 
 
@@ -1247,7 +1350,7 @@ var Trade = /*#__PURE__*/function () {
 
         if (etherIn && _i === 1) {
           // increase the input amount by this.minerBribe
-          var _modifiedAmount3 = _inputAmount.add(wrappedAmount(this.minerBribe, route.chainId)); // console.log('original amount in', inputAmount.toExact())
+          var _modifiedAmount3 = _inputAmount.add(this.minerBribe); // console.log('original amount in', inputAmount.toExact())
           // console.log('modified amount in', modifiedAmount.toExact())
 
 
@@ -1265,13 +1368,23 @@ var Trade = /*#__PURE__*/function () {
     }
 
     this.exchange = route.pairs[0].exchange;
-    this.route = route;
-    this.tradeType = tradeType;
-    this.inputAmount = tradeType === exports.TradeType.EXACT_INPUT ? amount : route.input === ETHER ? CurrencyAmount.ether(amounts[0].raw) : amounts[0];
-    this.outputAmount = tradeType === exports.TradeType.EXACT_OUTPUT ? amount : route.output === ETHER ? CurrencyAmount.ether(amounts[amounts.length - 1].raw) : amounts[amounts.length - 1];
-    this.executionPrice = new Price(modifiedInput.currency, modifiedOutput.currency, modifiedInput.raw, modifiedOutput.raw);
-    this.nextMidPrice = new Route(nextPairs, route.input).midPrice;
-    this.priceImpact = computePriceImpact(route.midPrice, modifiedInput, modifiedOutput); // console.log('old price impact', computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount).toSignificant(6))
+    this.inputAmount = CurrencyAmount.fromFractionalAmount(route.input, amounts[0].numerator, amounts[0].denominator); // this.inputAmount =
+    //   tradeType === TradeType.EXACT_INPUT
+    //     ? amount
+    //     : route.input === ETHER
+    //     ? CurrencyAmount.ether(amounts[0].raw)
+    //     : amounts[0]
+
+    this.outputAmount = CurrencyAmount.fromFractionalAmount(route.output, amounts[amounts.length - 1].numerator, amounts[amounts.length - 1].denominator); // this.outputAmount =
+    //   tradeType === TradeType.EXACT_OUTPUT
+    //     ? amount
+    //     : route.output === ETHER
+    //     ? CurrencyAmount.ether(amounts[amounts.length - 1].raw)
+    //     : amounts[amounts.length - 1]
+
+    this.executionPrice = new Price(route.input, route.output, modifiedInput.quotient, modifiedOutput.quotient);
+    this.priceImpact = computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount); // this.priceImpact = computePriceImpact(route.midPrice, modifiedInput, modifiedOutput)
+    // console.log('old price impact', computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount).toSignificant(6))
     // console.log('******************')
     // console.log('*** TRADE START **')
     // console.log('******************')
@@ -1287,10 +1400,12 @@ var Trade = /*#__PURE__*/function () {
     // console.log('******************')
   }
   /**
-   * Constructs an exact in trade with the given amount in and route
-   * @param route route of the exact in trade
-   * @param amountIn the amount being passed in
-   */
+    * Constructs an exact in trade with the given amount in and route
+    * @param route route of the exact in trade
+    * @param amountIn the amount being passed in
+    * @param gasPriceToBeat the gas price used to calculate the bribe
+    * @param minerBribeMargin the margin to beat the gas price by
+    */
 
 
   Trade.exactIn = function exactIn(route, amountIn, gasPriceToBeat, minerBribeMargin) {
@@ -1300,6 +1415,8 @@ var Trade = /*#__PURE__*/function () {
    * Constructs an exact out trade with the given amount out and route
    * @param route route of the exact out trade
    * @param amountOut the amount returned by the trade
+   * @param gasPriceToBeat the gas price used to calculate the bribe
+  * @param minerBribeMargin the margin to beat the gas price by
    */
   ;
 
@@ -1320,8 +1437,8 @@ var Trade = /*#__PURE__*/function () {
     if (this.tradeType === exports.TradeType.EXACT_OUTPUT) {
       return this.outputAmount;
     } else {
-      var slippageAdjustedAmountOut = new Fraction(ONE).add(slippageTolerance).invert().multiply(this.outputAmount.raw).quotient;
-      return this.outputAmount instanceof TokenAmount ? new TokenAmount(this.outputAmount.token, slippageAdjustedAmountOut) : CurrencyAmount.ether(slippageAdjustedAmountOut);
+      var slippageAdjustedAmountOut = new Fraction(ONE).add(slippageTolerance).invert().multiply(this.outputAmount.quotient).quotient;
+      return CurrencyAmount.fromRawAmount(this.outputAmount.currency, slippageAdjustedAmountOut);
     }
   }
   /**
@@ -1336,8 +1453,8 @@ var Trade = /*#__PURE__*/function () {
     if (this.tradeType === exports.TradeType.EXACT_INPUT) {
       return this.inputAmount;
     } else {
-      var slippageAdjustedAmountIn = new Fraction(ONE).add(slippageTolerance).multiply(this.inputAmount.raw).quotient;
-      return this.inputAmount instanceof TokenAmount ? new TokenAmount(this.inputAmount.token, slippageAdjustedAmountIn) : CurrencyAmount.ether(slippageAdjustedAmountIn);
+      var slippageAdjustedAmountIn = new Fraction(ONE).add(slippageTolerance).multiply(this.inputAmount.quotient).quotient;
+      return CurrencyAmount.fromRawAmount(this.inputAmount.currency, slippageAdjustedAmountIn);
     }
   }
   /**
@@ -1360,7 +1477,7 @@ var Trade = /*#__PURE__*/function () {
   ;
 
   Trade.bestTradeExactIn = function bestTradeExactIn(pairs, currencyAmountIn, currencyOut, gasPriceToBeat, minerBribeMargin, _temp, // used in recursion.
-  currentPairs, originalAmountIn, bestTrades) {
+  currentPairs, nextAmountIn, bestTrades) {
     var _ref = _temp === void 0 ? {} : _temp,
         _ref$maxNumResults = _ref.maxNumResults,
         maxNumResults = _ref$maxNumResults === void 0 ? 3 : _ref$maxNumResults,
@@ -1371,8 +1488,8 @@ var Trade = /*#__PURE__*/function () {
       currentPairs = [];
     }
 
-    if (originalAmountIn === void 0) {
-      originalAmountIn = currencyAmountIn;
+    if (nextAmountIn === void 0) {
+      nextAmountIn = currencyAmountIn;
     }
 
     if (bestTrades === void 0) {
@@ -1381,17 +1498,16 @@ var Trade = /*#__PURE__*/function () {
 
     !(pairs.length > 0) ?  invariant(false, 'PAIRS')  : void 0;
     !(maxHops > 0) ?  invariant(false, 'MAX_HOPS')  : void 0;
-    !(originalAmountIn === currencyAmountIn || currentPairs.length > 0) ?  invariant(false, 'INVALID_RECURSION')  : void 0;
-    var chainId = currencyAmountIn instanceof TokenAmount ? currencyAmountIn.token.chainId : currencyOut instanceof Token ? currencyOut.chainId : undefined;
-    !(chainId !== undefined) ?  invariant(false, 'CHAIN_ID')  : void 0;
+    !(nextAmountIn === currencyAmountIn || currentPairs.length > 0) ?  invariant(false, 'INVALID_RECURSION')  : void 0;
     var tradeType = exports.TradeType.EXACT_INPUT;
-    var amountIn = wrappedAmount(currencyAmountIn, chainId);
-    var tokenOut = wrappedCurrency(currencyOut, chainId);
+    var amountIn = nextAmountIn.wrapped; //wrappedAmount(currencyAmountIn, chainId)
+
+    var tokenOut = currencyOut.wrapped; //wrappedCurrency(currencyOut, chainId)
 
     for (var i = 0; i < pairs.length; i++) {
       var pair = pairs[i]; // pair irrelevant
 
-      if (!pair.token0.equals(amountIn.token) && !pair.token1.equals(amountIn.token)) continue;
+      if (!pair.token0.equals(amountIn.currency) && !pair.token1.equals(amountIn.currency)) continue;
       if (pair.reserve0.equalTo(ZERO) || pair.reserve1.equalTo(ZERO)) continue;
       var amountOut = void 0;
 
@@ -1411,9 +1527,9 @@ var Trade = /*#__PURE__*/function () {
       } // we have arrived at the output token, so this is the final trade of one of the paths
 
 
-      if (amountOut.token.equals(tokenOut)) {
+      if (amountOut.currency.equals(tokenOut)) {
         try {
-          var newTrade = new Trade(new Route([].concat(currentPairs, [pair]), originalAmountIn.currency, currencyOut), originalAmountIn, tradeType, gasPriceToBeat, minerBribeMargin);
+          var newTrade = new Trade(new Route([].concat(currentPairs, [pair]), currencyAmountIn.currency, currencyOut), currencyAmountIn, tradeType, gasPriceToBeat, minerBribeMargin);
           sortedInsert(bestTrades, newTrade, maxNumResults, tradeComparator);
         } catch (e) {// catch the invariant
           // console.log('trade constructor err', e)
@@ -1421,10 +1537,10 @@ var Trade = /*#__PURE__*/function () {
       } else if (maxHops > 1 && pairs.length > 1) {
         var pairsExcludingThisPair = pairs.slice(0, i).concat(pairs.slice(i + 1, pairs.length)); // otherwise, consider all the other paths that lead from this token as long as we have not exceeded maxHops
 
-        Trade.bestTradeExactIn(pairsExcludingThisPair, amountOut, currencyOut, gasPriceToBeat, minerBribeMargin, {
+        Trade.bestTradeExactIn(pairsExcludingThisPair, currencyAmountIn, currencyOut, gasPriceToBeat, minerBribeMargin, {
           maxNumResults: maxNumResults,
           maxHops: maxHops - 1
-        }, [].concat(currentPairs, [pair]), originalAmountIn, bestTrades);
+        }, [].concat(currentPairs, [pair]), amountOut, bestTrades);
       }
     }
 
@@ -1451,7 +1567,7 @@ var Trade = /*#__PURE__*/function () {
   ;
 
   Trade.bestTradeExactOut = function bestTradeExactOut(pairs, currencyIn, currencyAmountOut, gasPriceToBeat, minerBribeMargin, _temp2, // used in recursion.
-  currentPairs, originalAmountOut, bestTrades) {
+  currentPairs, nextAmountOut, bestTrades) {
     var _ref2 = _temp2 === void 0 ? {} : _temp2,
         _ref2$maxNumResults = _ref2.maxNumResults,
         maxNumResults = _ref2$maxNumResults === void 0 ? 3 : _ref2$maxNumResults,
@@ -1462,8 +1578,8 @@ var Trade = /*#__PURE__*/function () {
       currentPairs = [];
     }
 
-    if (originalAmountOut === void 0) {
-      originalAmountOut = currencyAmountOut;
+    if (nextAmountOut === void 0) {
+      nextAmountOut = currencyAmountOut;
     }
 
     if (bestTrades === void 0) {
@@ -1472,16 +1588,14 @@ var Trade = /*#__PURE__*/function () {
 
     !(pairs.length > 0) ?  invariant(false, 'PAIRS')  : void 0;
     !(maxHops > 0) ?  invariant(false, 'MAX_HOPS')  : void 0;
-    !(originalAmountOut === currencyAmountOut || currentPairs.length > 0) ?  invariant(false, 'INVALID_RECURSION')  : void 0;
-    var chainId = currencyAmountOut instanceof TokenAmount ? currencyAmountOut.token.chainId : currencyIn instanceof Token ? currencyIn.chainId : undefined;
-    !(chainId !== undefined) ?  invariant(false, 'CHAIN_ID')  : void 0;
-    var amountOut = wrappedAmount(currencyAmountOut, chainId);
-    var tokenIn = wrappedCurrency(currencyIn, chainId);
+    !(nextAmountOut === currencyAmountOut || currentPairs.length > 0) ?  invariant(false, 'INVALID_RECURSION')  : void 0;
+    var amountOut = nextAmountOut.wrapped;
+    var tokenIn = currencyIn.wrapped;
 
     for (var i = 0; i < pairs.length; i++) {
       var pair = pairs[i]; // pair irrelevant
 
-      if (!pair.token0.equals(amountOut.token) && !pair.token1.equals(amountOut.token)) continue;
+      if (!pair.token0.equals(amountOut.currency) && !pair.token1.equals(amountOut.currency)) continue;
       if (pair.reserve0.equalTo(ZERO) || pair.reserve1.equalTo(ZERO)) continue;
       var amountIn = void 0;
 
@@ -1501,9 +1615,9 @@ var Trade = /*#__PURE__*/function () {
       } // we have arrived at the input token, so this is the first trade of one of the paths
 
 
-      if (amountIn.token.equals(tokenIn)) {
+      if (amountIn.currency.equals(tokenIn)) {
         try {
-          var newTrade = new Trade(new Route([pair].concat(currentPairs), currencyIn, originalAmountOut.currency), originalAmountOut, exports.TradeType.EXACT_OUTPUT, gasPriceToBeat, minerBribeMargin);
+          var newTrade = new Trade(new Route([pair].concat(currentPairs), currencyIn, currencyAmountOut.currency), currencyAmountOut, exports.TradeType.EXACT_OUTPUT, gasPriceToBeat, minerBribeMargin);
           sortedInsert(bestTrades, newTrade, maxNumResults, tradeComparator);
         } catch (e) {// catch the invariant
           // console.log('trade constructor err', e)
@@ -1511,10 +1625,10 @@ var Trade = /*#__PURE__*/function () {
       } else if (maxHops > 1 && pairs.length > 1) {
         var pairsExcludingThisPair = pairs.slice(0, i).concat(pairs.slice(i + 1, pairs.length)); // otherwise, consider all the other paths that arrive at this token as long as we have not exceeded maxHops
 
-        Trade.bestTradeExactOut(pairsExcludingThisPair, currencyIn, amountIn, gasPriceToBeat, minerBribeMargin, {
+        Trade.bestTradeExactOut(pairsExcludingThisPair, currencyIn, currencyAmountOut, gasPriceToBeat, minerBribeMargin, {
           maxNumResults: maxNumResults,
           maxHops: maxHops - 1
-        }, [pair].concat(currentPairs), originalAmountOut, bestTrades);
+        }, [pair].concat(currentPairs), amountIn, bestTrades);
       }
     }
 
@@ -1579,8 +1693,8 @@ var Trade = /*#__PURE__*/function () {
         _ref3$maxHops = _ref3.maxHops,
         maxHops = _ref3$maxHops === void 0 ? 3 : _ref3$maxHops;
 
-    var etherIn = currencyIn === ETHER;
-    var etherOut = currencyOut === ETHER;
+    var etherIn = currencyIn.isNative;
+    var etherOut = currencyOut.isNative;
     if (!etherIn && !etherOut) return null;
     var exactInGas = estimatedGasForMethod(Trade.methodNameForTradeType(exports.TradeType.EXACT_INPUT, etherIn, etherOut), maxHops.toString());
     var exactOutGas = estimatedGasForMethod(Trade.methodNameForTradeType(exports.TradeType.EXACT_OUTPUT, etherIn, etherOut), maxHops.toString());
@@ -1590,18 +1704,18 @@ var Trade = /*#__PURE__*/function () {
     var minTokenAmountOut;
 
     if (etherIn) {
-      var outTrade = Trade.bestTradeExactOut(pairs, currencyOut, CurrencyAmount.ether(exactOutBribe), '0', '0')[0];
+      var outTrade = Trade.bestTradeExactOut(pairs, currencyOut, CurrencyAmount.fromRawAmount(currencyIn, exactOutBribe), '0', '0')[0];
 
       if (outTrade) {
-        minTokenAmountIn = CurrencyAmount.ether(exactInBribe);
+        minTokenAmountIn = CurrencyAmount.fromRawAmount(currencyIn, exactInBribe);
         minTokenAmountOut = outTrade.inputAmount;
       }
     } else if (etherOut) {
-      var inTrade = Trade.bestTradeExactIn(pairs, CurrencyAmount.ether(exactInBribe), currencyIn, '0', '0')[0];
+      var inTrade = Trade.bestTradeExactIn(pairs, CurrencyAmount.fromRawAmount(currencyIn, exactInBribe), currencyIn, '0', '0')[0];
 
       if (inTrade) {
         minTokenAmountIn = inTrade.outputAmount;
-        minTokenAmountOut = CurrencyAmount.ether(exactOutBribe);
+        minTokenAmountOut = CurrencyAmount.fromRawAmount(currencyIn, exactOutBribe);
       }
     }
 
@@ -1618,20 +1732,21 @@ var Trade = /*#__PURE__*/function () {
   Trade.estimateBribeAmounts = function estimateBribeAmounts(gasPriceToBeat, minerBribeMargin) {
     var _bribesByMethod;
 
-    var bribesByMethod = (_bribesByMethod = {}, _bribesByMethod[MethodName.swapETHForExactTokens] = CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapETHForExactTokens'), minerBribeMargin)), _bribesByMethod[MethodName.swapExactETHForTokens] = CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactETHForTokens'), minerBribeMargin)), _bribesByMethod[MethodName.swapExactTokensForETH] = CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactTokensForETH'), minerBribeMargin)), _bribesByMethod[MethodName.swapExactTokensForTokens] = CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactTokensForTokens'), minerBribeMargin)), _bribesByMethod[MethodName.swapTokensForExactETH] = CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapTokensForExactETH'), minerBribeMargin)), _bribesByMethod[MethodName.swapTokensForExactTokens] = CurrencyAmount.ether(calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapTokensForExactTokens'), minerBribeMargin)), _bribesByMethod);
-    var minBribe = CurrencyAmount.ether('1000000000000000000000000000000000000000000000000');
-    var maxBribe = CurrencyAmount.ether('0');
-    var totalBribe = CurrencyAmount.ether('0');
+    var ETH = Ether.onChain(1);
+    var bribesByMethod = (_bribesByMethod = {}, _bribesByMethod[exports.MethodName.swapETHForExactTokens] = CurrencyAmount.fromRawAmount(ETH, calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapETHForExactTokens'), minerBribeMargin)), _bribesByMethod[exports.MethodName.swapExactETHForTokens] = CurrencyAmount.fromRawAmount(ETH, calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactETHForTokens'), minerBribeMargin)), _bribesByMethod[exports.MethodName.swapExactTokensForETH] = CurrencyAmount.fromRawAmount(ETH, calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactTokensForETH'), minerBribeMargin)), _bribesByMethod[exports.MethodName.swapExactTokensForTokens] = CurrencyAmount.fromRawAmount(ETH, calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactTokensForTokens'), minerBribeMargin)), _bribesByMethod[exports.MethodName.swapTokensForExactETH] = CurrencyAmount.fromRawAmount(ETH, calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapTokensForExactETH'), minerBribeMargin)), _bribesByMethod[exports.MethodName.swapTokensForExactTokens] = CurrencyAmount.fromRawAmount(ETH, calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapTokensForExactTokens'), minerBribeMargin)), _bribesByMethod);
+    var minBribe = CurrencyAmount.fromRawAmount(ETH, '1000000000000000000000000000000000000000000000000');
+    var maxBribe = CurrencyAmount.fromRawAmount(ETH, '0');
+    var totalBribe = CurrencyAmount.fromRawAmount(ETH, '0');
 
-    for (var methodName in MethodName) {
+    for (var methodName in exports.MethodName) {
       var bribe = bribesByMethod[methodName];
       totalBribe.add(bribe);
       if (bribe.lessThan(minBribe)) minBribe = bribe;
       if (bribe.greaterThan(maxBribe)) maxBribe = bribe;
     }
 
-    var meanfraction = totalBribe.divide(String(Object.keys(MethodName).length));
-    var meanBribe = CurrencyAmount.ether(JSBI.divide(meanfraction.numerator, meanfraction.denominator));
+    var meanfraction = totalBribe.divide(String(Object.keys(exports.MethodName).length));
+    var meanBribe = CurrencyAmount.fromRawAmount(ETH, JSBI.divide(meanfraction.numerator, meanfraction.denominator));
     return {
       estimates: bribesByMethod,
       minBribe: minBribe,
@@ -1644,7 +1759,7 @@ var Trade = /*#__PURE__*/function () {
 }();
 
 function toHex(currencyAmount) {
-  return "0x" + currencyAmount.raw.toString(16);
+  return "0x" + currencyAmount.quotient.toString(16);
 }
 
 var ZERO_HEX = '0x0';
@@ -1665,8 +1780,8 @@ var Router = /*#__PURE__*/function () {
 
 
   Router.swapCallParameters = function swapCallParameters(trade, options) {
-    var etherIn = trade.inputAmount.currency === ETHER;
-    var etherOut = trade.outputAmount.currency === ETHER; // the router does not support both ether in and out
+    var etherIn = trade.inputAmount.currency.isNative;
+    var etherOut = trade.outputAmount.currency.isNative; // the router does not support both ether in and out
 
     !!(etherIn && etherOut) ?  invariant(false, 'ETHER_IN_OUT')  : void 0;
     !(!('ttl' in options) || options.ttl > 0) ?  invariant(false, 'TTL')  : void 0;
@@ -1835,25 +1950,38 @@ var Fetcher = /*#__PURE__*/function () {
 }();
 
 exports.JSBI = JSBI;
-exports.Currency = Currency;
+exports.AbstractCurrency = AbstractCurrency;
 exports.CurrencyAmount = CurrencyAmount;
-exports.ETHER = ETHER;
+exports.Ether = Ether;
 exports.FACTORY_ADDRESS = FACTORY_ADDRESS;
+exports.FIVE = FIVE;
 exports.Fetcher = Fetcher;
 exports.Fraction = Fraction;
+exports.GAS_ESTIMATES = GAS_ESTIMATES;
 exports.INIT_CODE_HASH = INIT_CODE_HASH;
 exports.InsufficientInputAmountError = InsufficientInputAmountError;
 exports.InsufficientReservesError = InsufficientReservesError;
 exports.MINIMUM_LIQUIDITY = MINIMUM_LIQUIDITY;
+exports.MaxUint256 = MaxUint256;
+exports.NativeCurrency = NativeCurrency;
+exports.ONE = ONE;
 exports.Pair = Pair;
 exports.Percent = Percent;
 exports.Price = Price;
+exports.ROUTER_ADDRESS = ROUTER_ADDRESS;
 exports.Route = Route;
 exports.Router = Router;
+exports.SOLIDITY_TYPE_MAXIMA = SOLIDITY_TYPE_MAXIMA;
+exports.TEN = TEN;
+exports.THREE = THREE;
+exports.TWO = TWO;
 exports.Token = Token;
-exports.TokenAmount = TokenAmount;
 exports.Trade = Trade;
 exports.WETH = WETH;
+exports.ZERO = ZERO;
+exports._100 = _100;
+exports._1000 = _1000;
+exports._997 = _997;
 exports.currencyEquals = currencyEquals;
 exports.inputOutputComparator = inputOutputComparator;
 exports.tradeComparator = tradeComparator;

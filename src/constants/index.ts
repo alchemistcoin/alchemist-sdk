@@ -1,7 +1,7 @@
 import JSBI from 'jsbi'
 
 // exports for external consumption
-export type BigintIsh = JSBI | bigint | string
+export type BigintIsh = JSBI | number | string
 
 export enum ChainId {
   MAINNET = 1,
@@ -28,6 +28,10 @@ export enum Rounding {
   ROUND_HALF_UP,
   ROUND_UP
 }
+
+export const MaxUint256 = JSBI.BigInt(
+  '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+)
 
 export const FACTORY_ADDRESS: { [exchange in Exchange]: string } = {
   [Exchange.UNI]: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',

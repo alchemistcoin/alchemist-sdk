@@ -1,5 +1,5 @@
 import JSBI from 'jsbi';
-export declare type BigintIsh = JSBI | bigint | string;
+export declare type BigintIsh = JSBI | number | string;
 export declare enum ChainId {
     MAINNET = 1,
     ROPSTEN = 3,
@@ -22,6 +22,7 @@ export declare enum Rounding {
     ROUND_HALF_UP = 1,
     ROUND_UP = 2
 }
+export declare const MaxUint256: JSBI;
 export declare const FACTORY_ADDRESS: {
     [exchange in Exchange]: string;
 };
