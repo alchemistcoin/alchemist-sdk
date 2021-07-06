@@ -86,9 +86,16 @@ interface SocketOptions {
     onDisconnect?: (err: any) => void;
     onError?: (err: any) => void;
     onGasChange?: (gas: any) => void;
-    onSessionResponse?: (session: any) => void;
     onTransactionResponse?: (transaction: TransactionRes) => void;
     onTransactionUpdate?: (transaction: TransactionDiagnosisRes) => void;
 }
-export default function init(serverUrl?: string): ({ onConnect, onConnectError, onDisconnect, onError, onGasChange, onSessionResponse, onTransactionResponse, onTransactionUpdate, }: SocketOptions) => () => void;
+export declare class MistxSocket {
+    private socket;
+    constructor(serverUrl?: string);
+    private disconnect;
+    init({ onConnect, onConnectError, onDisconnect, onError, onGasChange, onTransactionResponse, onTransactionUpdate, }: SocketOptions): () => void;
+    emitTransactionRequest(transaction: TransactionReq): void;
+    emitStatusRequest(transaction: TransactionReq): void;
+    emitTransactionCancellation(transaction: TransactionProcessed): void;
+}
 export {};

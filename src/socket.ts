@@ -109,92 +109,98 @@ interface SocketOptions {
   onDisconnect?: (err: any) => void
   onError?: (err: any) => void
   onGasChange?: (gas: any) => void
-  onSessionResponse?: (session: any) => void
   onTransactionResponse?: (transaction: TransactionRes) => void
   onTransactionUpdate?: (transaction: TransactionDiagnosisRes) => void
 }
 
 const defaultServerUrl = 'https://mistx-app-goerli.herokuapp.com'
+const tokenKey = `SESSION_TOKEN`
+const token = localStorage.getItem(tokenKey)
 
-export default function init(serverUrl: string = defaultServerUrl) {
-  const tokenKey = `SESSION_TOKEN`
-  const token = localStorage.getItem(tokenKey)
-  const socket: Socket<QuoteEventsMap, QuoteEventsMap> = io(serverUrl, {
-    transports: ['websocket'],
-    auth: { token },
-    reconnection: true,
-    reconnectionDelay: 5000,
-    autoConnect: true
-  })
+export class MistxSocket {
+  private socket: Socket<QuoteEventsMap, QuoteEventsMap>
 
-  function disconnect() {
-    socket.off('connect')
-    socket.off('connect_error')
-    socket.off(Event.SOCKET_ERR)
-    socket.off(Event.SOCKET_SESSION_RESPONSE)
-    socket.off(Event.GAS_CHANGE)
-    socket.off(Event.TRANSACTION_RESPONSE)
-    socket.off(Event.TRANSACTION_DIAGNOSIS)
+  constructor(serverUrl: string = defaultServerUrl) {
+    const socket: Socket<QuoteEventsMap, QuoteEventsMap> = io(serverUrl, {
+      transports: ['websocket'],
+      auth: { token },
+      reconnection: true,
+      reconnectionDelay: 5000,
+      autoConnect: true
+    })
+
+    this.socket = socket
   }
 
-  function Sockets({
+  private disconnect() {
+    this.socket.off('connect')
+    this.socket.off('connect_error')
+    this.socket.off(Event.SOCKET_ERR)
+    this.socket.off(Event.SOCKET_SESSION_RESPONSE)
+    this.socket.off(Event.GAS_CHANGE)
+    this.socket.off(Event.TRANSACTION_RESPONSE)
+    this.socket.off(Event.TRANSACTION_DIAGNOSIS)
+  }
+
+  public init({
     onConnect,
     onConnectError,
     onDisconnect,
     onError,
     onGasChange,
-    onSessionResponse,
     onTransactionResponse,
     onTransactionUpdate,
   }: SocketOptions) {
-    socket.on('connect', () => {
+    this.socket.on('connect', () => {
       // console.log('websocket connected')
       if (onConnect) onConnect()
     })
   
-    socket.on('connect_error', (err: any) => {
+    this.socket.on('connect_error', (err: any) => {
       // console.log('websocket connect error', err)
       if (onConnectError) onConnectError(err)
     })
   
-    socket.on('disconnect', (err: any) => {
+    this.socket.on('disconnect', (err: any) => {
       // console.log('websocket disconnect', err)
       if (onDisconnect) onDisconnect(err)
     })
   
-    socket.on(Event.SOCKET_ERR, (err: any) => {
+    this.socket.on(Event.SOCKET_ERR, (err: any) => {
       // console.log('websocket err', err)
       if (onError) onError(err)
     })
   
-    socket.on(Event.SOCKET_SESSION_RESPONSE, (session: any) => {
-      if (onSessionResponse) onSessionResponse(session)
+    this.socket.on(Event.SOCKET_SESSION_RESPONSE, (session: any) => {
+      localStorage.setItem(tokenKey, session.token)
     })
   
-    socket.on(Event.GAS_CHANGE, (gas: any) => {
+    this.socket.on(Event.GAS_CHANGE, (gas: any) => {
       if (onGasChange) onGasChange(gas)
     })
   
-    socket.on(Event.TRANSACTION_RESPONSE, (transaction: TransactionRes) => {
+    this.socket.on(Event.TRANSACTION_RESPONSE, (transaction: TransactionRes) => {
       if (onTransactionResponse) onTransactionResponse(transaction)
     })
   
-    socket.on(Event.TRANSACTION_DIAGNOSIS, (diagnosis: TransactionDiagnosisRes) => {
+    this.socket.on(Event.TRANSACTION_DIAGNOSIS, (diagnosis: TransactionDiagnosisRes) => {
       if (onTransactionUpdate) onTransactionUpdate(diagnosis)
     })
   
     return () => {
-      disconnect()
+      this.disconnect()
     }
   }
-  
-  Sockets.prototype.emitRequest = function emitTransactionRequest(transaction: TransactionReq) {
-    socket.emit(Event.TRANSACTION_REQUEST, transaction)
-  }
-  
-  Sockets.prototype.emitCancellation = function emitTransactionCancellation(transaction: TransactionProcessed) {
-    socket.emit(Event.TRANSACTION_CANCEL_REQUEST, transaction)
+
+  public emitTransactionRequest(transaction: TransactionReq) {
+    this.socket.emit(Event.TRANSACTION_REQUEST, transaction)
   }
 
-  return Sockets
+  public emitStatusRequest(transaction: TransactionReq) {
+    this.socket.emit(Event.TRANSACTION_STATUS_REQUEST, transaction)
+  }
+  
+  public emitTransactionCancellation(transaction: TransactionProcessed) {
+    this.socket.emit(Event.TRANSACTION_CANCEL_REQUEST, transaction)
+  }
 }

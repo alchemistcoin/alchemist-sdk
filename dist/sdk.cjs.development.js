@@ -15,7 +15,7 @@ var solidity = require('@ethersproject/solidity');
 var contracts = require('@ethersproject/contracts');
 var networks = require('@ethersproject/networks');
 var providers = require('@ethersproject/providers');
-require('socket.io-client');
+var socket_ioClient = require('socket.io-client');
 
 var _FACTORY_ADDRESS, _ROUTER_ADDRESS, _INIT_CODE_HASH, _SOLIDITY_TYPE_MAXIMA;
 
@@ -1978,6 +1978,97 @@ var Router = /*#__PURE__*/function () {
   Diagnosis["ERROR_UNKNOWN"] = "ERROR_UNKNOWN";
 })(exports.Diagnosis || (exports.Diagnosis = {}));
 
+var defaultServerUrl = 'https://mistx-app-goerli.herokuapp.com';
+var tokenKey = "SESSION_TOKEN";
+var token = /*#__PURE__*/localStorage.getItem(tokenKey);
+var MistxSocket = /*#__PURE__*/function () {
+  function MistxSocket(serverUrl) {
+    if (serverUrl === void 0) {
+      serverUrl = defaultServerUrl;
+    }
+
+    var socket = socket_ioClient.io(serverUrl, {
+      transports: ['websocket'],
+      auth: {
+        token: token
+      },
+      reconnection: true,
+      reconnectionDelay: 5000,
+      autoConnect: true
+    });
+    this.socket = socket;
+  }
+
+  var _proto = MistxSocket.prototype;
+
+  _proto.disconnect = function disconnect() {
+    this.socket.off('connect');
+    this.socket.off('connect_error');
+    this.socket.off(exports.Event.SOCKET_ERR);
+    this.socket.off(exports.Event.SOCKET_SESSION_RESPONSE);
+    this.socket.off(exports.Event.GAS_CHANGE);
+    this.socket.off(exports.Event.TRANSACTION_RESPONSE);
+    this.socket.off(exports.Event.TRANSACTION_DIAGNOSIS);
+  };
+
+  _proto.init = function init(_ref) {
+    var _this = this;
+
+    var onConnect = _ref.onConnect,
+        onConnectError = _ref.onConnectError,
+        onDisconnect = _ref.onDisconnect,
+        onError = _ref.onError,
+        onGasChange = _ref.onGasChange,
+        onTransactionResponse = _ref.onTransactionResponse,
+        onTransactionUpdate = _ref.onTransactionUpdate;
+    this.socket.on('connect', function () {
+      // console.log('websocket connected')
+      if (onConnect) onConnect();
+    });
+    this.socket.on('connect_error', function (err) {
+      // console.log('websocket connect error', err)
+      if (onConnectError) onConnectError(err);
+    });
+    this.socket.on('disconnect', function (err) {
+      // console.log('websocket disconnect', err)
+      if (onDisconnect) onDisconnect(err);
+    });
+    this.socket.on(exports.Event.SOCKET_ERR, function (err) {
+      // console.log('websocket err', err)
+      if (onError) onError(err);
+    });
+    this.socket.on(exports.Event.SOCKET_SESSION_RESPONSE, function (session) {
+      localStorage.setItem(tokenKey, session.token);
+    });
+    this.socket.on(exports.Event.GAS_CHANGE, function (gas) {
+      if (onGasChange) onGasChange(gas);
+    });
+    this.socket.on(exports.Event.TRANSACTION_RESPONSE, function (transaction) {
+      if (onTransactionResponse) onTransactionResponse(transaction);
+    });
+    this.socket.on(exports.Event.TRANSACTION_DIAGNOSIS, function (diagnosis) {
+      if (onTransactionUpdate) onTransactionUpdate(diagnosis);
+    });
+    return function () {
+      _this.disconnect();
+    };
+  };
+
+  _proto.emitTransactionRequest = function emitTransactionRequest(transaction) {
+    this.socket.emit(exports.Event.TRANSACTION_REQUEST, transaction);
+  };
+
+  _proto.emitStatusRequest = function emitStatusRequest(transaction) {
+    this.socket.emit(exports.Event.TRANSACTION_STATUS_REQUEST, transaction);
+  };
+
+  _proto.emitTransactionCancellation = function emitTransactionCancellation(transaction) {
+    this.socket.emit(exports.Event.TRANSACTION_CANCEL_REQUEST, transaction);
+  };
+
+  return MistxSocket;
+}();
+
 exports.JSBI = JSBI;
 exports.AbstractCurrency = AbstractCurrency;
 exports.CurrencyAmount = CurrencyAmount;
@@ -1992,6 +2083,7 @@ exports.InsufficientInputAmountError = InsufficientInputAmountError;
 exports.InsufficientReservesError = InsufficientReservesError;
 exports.MINIMUM_LIQUIDITY = MINIMUM_LIQUIDITY;
 exports.MaxUint256 = MaxUint256;
+exports.MistxSocket = MistxSocket;
 exports.NativeCurrency = NativeCurrency;
 exports.ONE = ONE;
 exports.Pair = Pair;

@@ -10,7 +10,7 @@ import { keccak256, pack } from '@ethersproject/solidity';
 import { Contract } from '@ethersproject/contracts';
 import { getNetwork } from '@ethersproject/networks';
 import { getDefaultProvider } from '@ethersproject/providers';
-import 'socket.io-client';
+import { io } from 'socket.io-client';
 
 var _FACTORY_ADDRESS, _ROUTER_ADDRESS, _INIT_CODE_HASH, _SOLIDITY_TYPE_MAXIMA;
 var ChainId;
@@ -1988,5 +1988,96 @@ var Diagnosis;
   Diagnosis["ERROR_UNKNOWN"] = "ERROR_UNKNOWN";
 })(Diagnosis || (Diagnosis = {}));
 
-export { AbstractCurrency, ChainId, CurrencyAmount, Diagnosis, Ether, Event, Exchange, FACTORY_ADDRESS, FIVE, Fetcher, Fraction, GAS_ESTIMATES, INIT_CODE_HASH, InsufficientInputAmountError, InsufficientReservesError, MINIMUM_LIQUIDITY, MaxUint256, MethodName, NativeCurrency, ONE, Pair, Percent, Price, ROUTER_ADDRESS, Rounding, Route, Router, SOLIDITY_TYPE_MAXIMA, SolidityType, Status, TEN, THREE, TWO, Token, Trade, TradeType, WETH, ZERO, _100, _1000, _997, currencyEquals, inputOutputComparator, tradeComparator };
+var defaultServerUrl = 'https://mistx-app-goerli.herokuapp.com';
+var tokenKey = "SESSION_TOKEN";
+var token = /*#__PURE__*/localStorage.getItem(tokenKey);
+var MistxSocket = /*#__PURE__*/function () {
+  function MistxSocket(serverUrl) {
+    if (serverUrl === void 0) {
+      serverUrl = defaultServerUrl;
+    }
+
+    var socket = io(serverUrl, {
+      transports: ['websocket'],
+      auth: {
+        token: token
+      },
+      reconnection: true,
+      reconnectionDelay: 5000,
+      autoConnect: true
+    });
+    this.socket = socket;
+  }
+
+  var _proto = MistxSocket.prototype;
+
+  _proto.disconnect = function disconnect() {
+    this.socket.off('connect');
+    this.socket.off('connect_error');
+    this.socket.off(Event.SOCKET_ERR);
+    this.socket.off(Event.SOCKET_SESSION_RESPONSE);
+    this.socket.off(Event.GAS_CHANGE);
+    this.socket.off(Event.TRANSACTION_RESPONSE);
+    this.socket.off(Event.TRANSACTION_DIAGNOSIS);
+  };
+
+  _proto.init = function init(_ref) {
+    var _this = this;
+
+    var onConnect = _ref.onConnect,
+        onConnectError = _ref.onConnectError,
+        onDisconnect = _ref.onDisconnect,
+        onError = _ref.onError,
+        onGasChange = _ref.onGasChange,
+        onTransactionResponse = _ref.onTransactionResponse,
+        onTransactionUpdate = _ref.onTransactionUpdate;
+    this.socket.on('connect', function () {
+      // console.log('websocket connected')
+      if (onConnect) onConnect();
+    });
+    this.socket.on('connect_error', function (err) {
+      // console.log('websocket connect error', err)
+      if (onConnectError) onConnectError(err);
+    });
+    this.socket.on('disconnect', function (err) {
+      // console.log('websocket disconnect', err)
+      if (onDisconnect) onDisconnect(err);
+    });
+    this.socket.on(Event.SOCKET_ERR, function (err) {
+      // console.log('websocket err', err)
+      if (onError) onError(err);
+    });
+    this.socket.on(Event.SOCKET_SESSION_RESPONSE, function (session) {
+      localStorage.setItem(tokenKey, session.token);
+    });
+    this.socket.on(Event.GAS_CHANGE, function (gas) {
+      if (onGasChange) onGasChange(gas);
+    });
+    this.socket.on(Event.TRANSACTION_RESPONSE, function (transaction) {
+      if (onTransactionResponse) onTransactionResponse(transaction);
+    });
+    this.socket.on(Event.TRANSACTION_DIAGNOSIS, function (diagnosis) {
+      if (onTransactionUpdate) onTransactionUpdate(diagnosis);
+    });
+    return function () {
+      _this.disconnect();
+    };
+  };
+
+  _proto.emitTransactionRequest = function emitTransactionRequest(transaction) {
+    this.socket.emit(Event.TRANSACTION_REQUEST, transaction);
+  };
+
+  _proto.emitStatusRequest = function emitStatusRequest(transaction) {
+    this.socket.emit(Event.TRANSACTION_STATUS_REQUEST, transaction);
+  };
+
+  _proto.emitTransactionCancellation = function emitTransactionCancellation(transaction) {
+    this.socket.emit(Event.TRANSACTION_CANCEL_REQUEST, transaction);
+  };
+
+  return MistxSocket;
+}();
+
+export { AbstractCurrency, ChainId, CurrencyAmount, Diagnosis, Ether, Event, Exchange, FACTORY_ADDRESS, FIVE, Fetcher, Fraction, GAS_ESTIMATES, INIT_CODE_HASH, InsufficientInputAmountError, InsufficientReservesError, MINIMUM_LIQUIDITY, MaxUint256, MethodName, MistxSocket, NativeCurrency, ONE, Pair, Percent, Price, ROUTER_ADDRESS, Rounding, Route, Router, SOLIDITY_TYPE_MAXIMA, SolidityType, Status, TEN, THREE, TWO, Token, Trade, TradeType, WETH, ZERO, _100, _1000, _997, currencyEquals, inputOutputComparator, tradeComparator };
 //# sourceMappingURL=sdk.esm.js.map
