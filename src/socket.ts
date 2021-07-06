@@ -115,12 +115,12 @@ interface SocketOptions {
 
 const defaultServerUrl = 'https://mistx-app-goerli.herokuapp.com'
 const tokenKey = `SESSION_TOKEN`
-const token = localStorage.getItem(tokenKey)
 
 export class MistxSocket {
   private socket: Socket<QuoteEventsMap, QuoteEventsMap>
 
   constructor(serverUrl: string = defaultServerUrl) {
+    const token = localStorage.getItem(tokenKey)
     const socket: Socket<QuoteEventsMap, QuoteEventsMap> = io(serverUrl, {
       transports: ['websocket'],
       auth: { token },

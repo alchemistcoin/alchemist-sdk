@@ -1990,13 +1990,13 @@ var Diagnosis;
 
 var defaultServerUrl = 'https://mistx-app-goerli.herokuapp.com';
 var tokenKey = "SESSION_TOKEN";
-var token = /*#__PURE__*/localStorage.getItem(tokenKey);
 var MistxSocket = /*#__PURE__*/function () {
   function MistxSocket(serverUrl) {
     if (serverUrl === void 0) {
       serverUrl = defaultServerUrl;
     }
 
+    var token = localStorage.getItem(tokenKey);
     var socket = io(serverUrl, {
       transports: ['websocket'],
       auth: {
