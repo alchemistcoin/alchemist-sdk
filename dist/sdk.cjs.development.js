@@ -15,6 +15,7 @@ var solidity = require('@ethersproject/solidity');
 var contracts = require('@ethersproject/contracts');
 var networks = require('@ethersproject/networks');
 var providers = require('@ethersproject/providers');
+require('socket.io-client');
 
 var _FACTORY_ADDRESS, _ROUTER_ADDRESS, _INIT_CODE_HASH, _SOLIDITY_TYPE_MAXIMA;
 
@@ -1758,6 +1759,93 @@ var Trade = /*#__PURE__*/function () {
   return Trade;
 }();
 
+var ERC20 = [
+	{
+		constant: true,
+		inputs: [
+		],
+		name: "decimals",
+		outputs: [
+			{
+				name: "",
+				type: "uint8"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	},
+	{
+		constant: true,
+		inputs: [
+			{
+				name: "",
+				type: "address"
+			}
+		],
+		name: "balanceOf",
+		outputs: [
+			{
+				name: "",
+				type: "uint256"
+			}
+		],
+		payable: false,
+		stateMutability: "view",
+		type: "function"
+	}
+];
+
+var _TOKEN_DECIMALS_CACHE;
+var TOKEN_DECIMALS_CACHE = (_TOKEN_DECIMALS_CACHE = {}, _TOKEN_DECIMALS_CACHE[exports.ChainId.MAINNET] = {
+  '0xE0B7927c4aF23765Cb51314A0E0521A9645F0E2A': 9 // DGD
+
+}, _TOKEN_DECIMALS_CACHE);
+/**
+ * Contains methods for constructing instances of pairs and tokens from on-chain data.
+ */
+
+var Fetcher = /*#__PURE__*/function () {
+  /**
+   * Cannot be constructed.
+   */
+  function Fetcher() {}
+  /**
+   * Fetch information for a given token on the given chain, using the given ethers provider.
+   * @param chainId chain of the token
+   * @param address address of the token on the chain
+   * @param provider provider used to fetch the token
+   * @param symbol optional symbol of the token
+   * @param name optional name of the token
+   */
+
+
+  Fetcher.fetchTokenData = function fetchTokenData(chainId, address, provider, symbol, name) {
+    try {
+      var _TOKEN_DECIMALS_CACHE2, _TOKEN_DECIMALS_CACHE3;
+
+      var _temp3 = function _temp3(parsedDecimals) {
+        return new Token(chainId, address, parsedDecimals, symbol, name);
+      };
+
+      if (provider === undefined) provider = providers.getDefaultProvider(networks.getNetwork(chainId));
+
+      var _temp4 = typeof ((_TOKEN_DECIMALS_CACHE2 = TOKEN_DECIMALS_CACHE) === null || _TOKEN_DECIMALS_CACHE2 === void 0 ? void 0 : (_TOKEN_DECIMALS_CACHE3 = _TOKEN_DECIMALS_CACHE2[chainId]) === null || _TOKEN_DECIMALS_CACHE3 === void 0 ? void 0 : _TOKEN_DECIMALS_CACHE3[address]) === 'number';
+
+      return Promise.resolve(_temp4 ? _temp3(TOKEN_DECIMALS_CACHE[chainId][address]) : Promise.resolve(new contracts.Contract(address, ERC20, provider).decimals().then(function (decimals) {
+        var _TOKEN_DECIMALS_CACHE4, _extends2, _extends3;
+
+        TOKEN_DECIMALS_CACHE = _extends({}, TOKEN_DECIMALS_CACHE, (_extends3 = {}, _extends3[chainId] = _extends({}, (_TOKEN_DECIMALS_CACHE4 = TOKEN_DECIMALS_CACHE) === null || _TOKEN_DECIMALS_CACHE4 === void 0 ? void 0 : _TOKEN_DECIMALS_CACHE4[chainId], (_extends2 = {}, _extends2[address] = decimals, _extends2)), _extends3));
+        return decimals;
+      })).then(_temp3));
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  };
+
+  return Fetcher;
+}();
+
 function toHex(currencyAmount) {
   return "0x" + currencyAmount.quotient.toString(16);
 }
@@ -1862,92 +1950,33 @@ var Router = /*#__PURE__*/function () {
   return Router;
 }();
 
-var ERC20 = [
-	{
-		constant: true,
-		inputs: [
-		],
-		name: "decimals",
-		outputs: [
-			{
-				name: "",
-				type: "uint8"
-			}
-		],
-		payable: false,
-		stateMutability: "view",
-		type: "function"
-	},
-	{
-		constant: true,
-		inputs: [
-			{
-				name: "",
-				type: "address"
-			}
-		],
-		name: "balanceOf",
-		outputs: [
-			{
-				name: "",
-				type: "uint256"
-			}
-		],
-		payable: false,
-		stateMutability: "view",
-		type: "function"
-	}
-];
+(function (Event) {
+  Event["GAS_CHANGE"] = "GAS_CHANGE";
+  Event["SOCKET_SESSION_RESPONSE"] = "SOCKET_SESSION";
+  Event["SOCKET_ERR"] = "SOCKET_ERR";
+  Event["TRANSACTION_REQUEST"] = "TRANSACTION_REQUEST";
+  Event["TRANSACTION_CANCEL_REQUEST"] = "TRANSACTION_CANCEL_REQUEST";
+  Event["TRANSACTION_RESPONSE"] = "TRANSACTION_RESPONSE";
+  Event["TRANSACTION_DIAGNOSIS"] = "TRANSACTION_DIAGNOSIS";
+  Event["TRANSACTION_STATUS_REQUEST"] = "TRANSACTION_STATUS_REQUEST";
+  Event["TRANSACTION_CANCEL_RESPONSE"] = "TRANSACTION_CANCEL_RESPONSE";
+})(exports.Event || (exports.Event = {}));
 
-var _TOKEN_DECIMALS_CACHE;
-var TOKEN_DECIMALS_CACHE = (_TOKEN_DECIMALS_CACHE = {}, _TOKEN_DECIMALS_CACHE[exports.ChainId.MAINNET] = {
-  '0xE0B7927c4aF23765Cb51314A0E0521A9645F0E2A': 9 // DGD
+(function (Status) {
+  Status["PENDING_TRANSACTION"] = "PENDING_TRANSACTION";
+  Status["FAILED_TRANSACTION"] = "FAILED_TRANSACTION";
+  Status["SUCCESSFUL_TRANSACTION"] = "SUCCESSFUL_TRANSACTION";
+  Status["CANCEL_TRANSACTION_SUCCESSFUL"] = "CANCEL_TRANSACTION_SUCCESSFUL";
+})(exports.Status || (exports.Status = {}));
 
-}, _TOKEN_DECIMALS_CACHE);
-/**
- * Contains methods for constructing instances of pairs and tokens from on-chain data.
- */
-
-var Fetcher = /*#__PURE__*/function () {
-  /**
-   * Cannot be constructed.
-   */
-  function Fetcher() {}
-  /**
-   * Fetch information for a given token on the given chain, using the given ethers provider.
-   * @param chainId chain of the token
-   * @param address address of the token on the chain
-   * @param provider provider used to fetch the token
-   * @param symbol optional symbol of the token
-   * @param name optional name of the token
-   */
-
-
-  Fetcher.fetchTokenData = function fetchTokenData(chainId, address, provider, symbol, name) {
-    try {
-      var _TOKEN_DECIMALS_CACHE2, _TOKEN_DECIMALS_CACHE3;
-
-      var _temp3 = function _temp3(parsedDecimals) {
-        return new Token(chainId, address, parsedDecimals, symbol, name);
-      };
-
-      if (provider === undefined) provider = providers.getDefaultProvider(networks.getNetwork(chainId));
-
-      var _temp4 = typeof ((_TOKEN_DECIMALS_CACHE2 = TOKEN_DECIMALS_CACHE) === null || _TOKEN_DECIMALS_CACHE2 === void 0 ? void 0 : (_TOKEN_DECIMALS_CACHE3 = _TOKEN_DECIMALS_CACHE2[chainId]) === null || _TOKEN_DECIMALS_CACHE3 === void 0 ? void 0 : _TOKEN_DECIMALS_CACHE3[address]) === 'number';
-
-      return Promise.resolve(_temp4 ? _temp3(TOKEN_DECIMALS_CACHE[chainId][address]) : Promise.resolve(new contracts.Contract(address, ERC20, provider).decimals().then(function (decimals) {
-        var _TOKEN_DECIMALS_CACHE4, _extends2, _extends3;
-
-        TOKEN_DECIMALS_CACHE = _extends({}, TOKEN_DECIMALS_CACHE, (_extends3 = {}, _extends3[chainId] = _extends({}, (_TOKEN_DECIMALS_CACHE4 = TOKEN_DECIMALS_CACHE) === null || _TOKEN_DECIMALS_CACHE4 === void 0 ? void 0 : _TOKEN_DECIMALS_CACHE4[chainId], (_extends2 = {}, _extends2[address] = decimals, _extends2)), _extends3));
-        return decimals;
-      })).then(_temp3));
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  };
-
-  return Fetcher;
-}();
+(function (Diagnosis) {
+  Diagnosis["LOWER_THAN_TAIL"] = "LOWER_THAN_TAIL";
+  Diagnosis["NOT_A_FLASHBLOCK"] = "NOT_A_FLASHBLOCK";
+  Diagnosis["BUNDLE_OUTBID"] = "BUNDLE_OUTBID";
+  Diagnosis["ERROR_API_BEHIND"] = "ERROR_API_BEHIND";
+  Diagnosis["MISSING_BLOCK_DATA"] = "MISSING_BLOCK_DATA";
+  Diagnosis["ERROR_UNKNOWN"] = "ERROR_UNKNOWN";
+})(exports.Diagnosis || (exports.Diagnosis = {}));
 
 exports.JSBI = JSBI;
 exports.AbstractCurrency = AbstractCurrency;
