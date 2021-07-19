@@ -1386,9 +1386,9 @@ var Trade = /*#__PURE__*/function () {
     //     ? CurrencyAmount.ether(amounts[amounts.length - 1].raw)
     //     : amounts[amounts.length - 1]
 
-    this.executionPrice = new Price(route.input, route.output, modifiedInput.quotient, modifiedOutput.quotient);
-    this.priceImpact = computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount); // this.priceImpact = computePriceImpact(route.midPrice, modifiedInput, modifiedOutput)
-    // console.log('old price impact', computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount).toSignificant(6))
+    this.executionPrice = new Price(route.input, route.output, modifiedInput.quotient, modifiedOutput.quotient); // this.priceImpact = computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount)
+
+    this.priceImpact = computePriceImpact(route.midPrice, CurrencyAmount.fromFractionalAmount(route.input, modifiedInput.numerator, modifiedInput.denominator), CurrencyAmount.fromFractionalAmount(route.output, modifiedOutput.numerator, modifiedOutput.denominator)); // console.log('old price impact', computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount).toSignificant(6))
     // console.log('******************')
     // console.log('*** TRADE START **')
     // console.log('******************')

@@ -317,9 +317,21 @@ export class Trade<
       modifiedInput.quotient,
       modifiedOutput.quotient
     )
-    this.priceImpact = computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount)
-    // this.priceImpact = computePriceImpact(route.midPrice, modifiedInput, modifiedOutput)
-
+    // this.priceImpact = computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount)
+    this.priceImpact = computePriceImpact(
+      route.midPrice, 
+      CurrencyAmount.fromFractionalAmount(
+        route.input,
+        modifiedInput.numerator,
+        modifiedInput.denominator
+      ), 
+      CurrencyAmount.fromFractionalAmount(
+        route.output,
+        modifiedOutput.numerator,
+        modifiedOutput.denominator
+      )
+    )
+    
     // console.log('old price impact', computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount).toSignificant(6))
     // console.log('******************')
     // console.log('*** TRADE START **')
