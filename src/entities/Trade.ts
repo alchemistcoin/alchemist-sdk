@@ -684,7 +684,7 @@ export class Trade<
     } else if (etherOut){
       const inTrade = Trade.bestTradeExactIn(
         pairs,
-        CurrencyAmount.fromRawAmount(currencyIn, exactInBribe),
+        CurrencyAmount.fromRawAmount(currencyOut, exactInBribe),
         currencyIn,
         '0',
         '0'
