@@ -86,8 +86,8 @@ export enum MethodName {
 export const GAS_ESTIMATES: { [methodName: string]: BigintIsh } = {
   swapETHForExactTokens: '155485',
   swapExactETHForTokens: '151393',
-  swapExactTokensForETH: '165009',
-  swapExactTokensForTokens: '204584',
-  swapTokensForExactETH: '195192',
-  swapTokensForExactTokens: '204584'
+  swapExactTokensForETH: '211606',
+  swapExactTokensForTokens: '216959',
+  swapTokensForExactETH: '241879',
+  swapTokensForExactTokens: '244052'
 }
