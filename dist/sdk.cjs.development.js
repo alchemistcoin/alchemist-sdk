@@ -1711,7 +1711,7 @@ var Trade = /*#__PURE__*/function () {
         minTokenAmountOut = outTrade.inputAmount;
       }
     } else if (etherOut) {
-      var inTrade = Trade.bestTradeExactIn(pairs, CurrencyAmount.fromRawAmount(currencyIn, exactInBribe), currencyIn, '0', '0')[0];
+      var inTrade = Trade.bestTradeExactIn(pairs, CurrencyAmount.fromRawAmount(currencyOut, exactInBribe), currencyIn, '0', '0')[0];
 
       if (inTrade) {
         minTokenAmountIn = inTrade.outputAmount;
