@@ -3,7 +3,7 @@ import { getNetwork } from '@ethersproject/networks'
 import { getDefaultProvider } from '@ethersproject/providers'
 import ERC20 from './abis/ERC20.json'
 import { ChainId } from './constants'
-import { Token } from './entities/token'
+import { Token } from './entities/Token'
 
 let TOKEN_DECIMALS_CACHE: { [chainId: number]: { [address: string]: number } } = {
   [ChainId.MAINNET]: {

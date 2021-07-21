@@ -1,5 +1,5 @@
 import { ChainId } from './constants';
-import { Token } from './entities/token';
+import { Token } from './entities/Token';
 /**
  * Contains methods for constructing instances of pairs and tokens from on-chain data.
  */
