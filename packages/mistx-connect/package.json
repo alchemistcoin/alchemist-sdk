@@ -35,5 +35,9 @@
 		"printWidth": 120,
 		"semi": false,
 		"singleQuote": true
-	}
+	},
+	"publishConfig": {
+    "access": "public"
+  },
+	"gitHead": "1f4f7cb26c991eb59fed40cabcb37bfdf36af58e"
 }
