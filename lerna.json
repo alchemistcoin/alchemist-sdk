@@ -1,0 +1,14 @@
+{
+  "version": "6.2.3",
+  "npmClient": "yarn",
+  "command": {
+    "publish": {
+      "ignoreChanges": [
+        "*.md"
+      ]
+    }
+  },
+  "packages": [
+    "packages/*"
+  ]
+}
