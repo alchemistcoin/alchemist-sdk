@@ -1,7 +1,7 @@
 {
 	"name": "@alchemist-coin/mistx-connect",
 	"license": "MIT",
-	"version": "3.1.1",
+	"version": "4.0.0",
 	"description": "🛠 An SDK for building applications on top of Uniswap.",
 	"main": "dist/index.js",
 	"typings": "dist/index.d.ts",
@@ -15,12 +15,12 @@
 		"ethereum"
 	],
 	"scripts": {
-    "lint": "tsdx lint src test",
-    "build": "tsdx build",
-    "start": "tsdx watch",
-    "test": "tsdx test",
-    "prepublishOnly": "tsdx build"
-  },
+		"lint": "tsdx lint src test",
+		"build": "tsdx build",
+		"start": "tsdx watch",
+		"test": "tsdx test",
+		"prepublishOnly": "tsdx build"
+	},
 	"dependencies": {
 		"@ethersproject/bignumber": "^5.4.0",
 		"socket.io-client": "^4.1.2"
