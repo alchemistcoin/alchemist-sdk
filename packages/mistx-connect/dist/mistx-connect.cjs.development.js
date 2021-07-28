@@ -81,6 +81,7 @@ var MistxSocket = /*#__PURE__*/function () {
         onDisconnect = _ref.onDisconnect,
         onError = _ref.onError,
         onGasChange = _ref.onGasChange,
+        onSocketSession = _ref.onSocketSession,
         onTransactionResponse = _ref.onTransactionResponse,
         onTransactionUpdate = _ref.onTransactionUpdate;
     this.socket.on('connect', function () {
@@ -101,6 +102,7 @@ var MistxSocket = /*#__PURE__*/function () {
     });
     this.socket.on(exports.Event.SOCKET_SESSION, function (session) {
       localStorage.setItem(tokenKey, session.token);
+      if (onSocketSession) onSocketSession(session);
     });
     this.socket.on(exports.Event.GAS_CHANGE, function (gas) {
       if (onGasChange) onGasChange(gas);
