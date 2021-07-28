@@ -40,18 +40,6 @@ export interface SocketSession {
     token: string;
     version: MistXVersion | undefined;
 }
-export interface TransactionRes {
-    transaction: TransactionProcessed;
-    status: Status;
-    message: string;
-    error: string;
-}
-export interface TransactionDiagnosisRes {
-    transaction: TransactionProcessed;
-    blockNumber: number;
-    flashbotsResolution: string;
-    mistxDiagnosis: Diagnosis;
-}
 export interface TransactionReq {
     serialized: string;
     raw: SwapReq | undefined;
