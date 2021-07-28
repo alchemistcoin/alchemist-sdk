@@ -55,20 +55,6 @@ export interface SocketSession {
   version: MistXVersion | undefined
 }
 
-export interface TransactionRes {
-  transaction: TransactionProcessed
-  status: Status
-  message: string
-  error: string
-}
-
-export interface TransactionDiagnosisRes {
-  transaction: TransactionProcessed
-  blockNumber: number
-  flashbotsResolution: string
-  mistxDiagnosis: Diagnosis
-}
-
 export interface TransactionReq {
   serialized: string // serialized transaction
   raw: SwapReq | undefined // raw def. of each type of trade
@@ -113,6 +99,7 @@ export interface BundleProcessed {
   deadline: BigNumberish
   simulateOnly: boolean
 }
+
 export interface BundleRes {
   bundle: BundleProcessed
   status: string
@@ -126,6 +113,7 @@ export interface BundleStatusRes {
   message: string
   error: string
 }
+
 interface QuoteEventsMap {
   [Event.SOCKET_SESSION]: (response: SocketSession) => void
   [Event.SOCKET_ERR]: (err: any) => void
