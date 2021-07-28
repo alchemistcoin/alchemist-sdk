@@ -92,13 +92,13 @@ export interface BundleProcessed {
     deadline: BigNumberish;
     simulateOnly: boolean;
 }
-interface BundleRes {
+export interface BundleRes {
     bundle: BundleProcessed;
     status: string;
     message: string;
     error: string;
 }
-interface BundleStatusRes {
+export interface BundleStatusRes {
     bundle: string | BundleProcessed;
     status: string;
     message: string;
@@ -119,8 +119,8 @@ export declare class MistxSocket {
     constructor(serverUrl?: string);
     private disconnect;
     init({ onConnect, onConnectError, onDisconnect, onError, onGasChange, onSocketSession, onTransactionResponse, onTransactionUpdate, }: SocketOptions): () => void;
-    emitTransactionRequest(transaction: TransactionReq): void;
-    emitStatusRequest(transaction: TransactionReq): void;
-    emitTransactionCancellation(serialized: BundleStatusRes): void;
+    emitTransactionRequest(bundle: BundleReq): void;
+    emitStatusRequest(id: string): void;
+    emitTransactionCancellation(id: string): void;
 }
 export {};

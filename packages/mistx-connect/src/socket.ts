@@ -113,14 +113,14 @@ export interface BundleProcessed {
   deadline: BigNumberish
   simulateOnly: boolean
 }
-interface BundleRes {
+export interface BundleRes {
   bundle: BundleProcessed
   status: string
   message: string
   error: string
 }
 
-interface BundleStatusRes {
+export interface BundleStatusRes {
   bundle: string | BundleProcessed // BundleProcessed.serialized
   status: string
   message: string
@@ -186,7 +186,7 @@ export class MistxSocket {
     onSocketSession,
     onTransactionResponse,
     onTransactionUpdate,
-  }: SocketOptions) {
+  }: SocketOptions): () => void {
     this.socket.on('connect', () => {
       // console.log('websocket connected')
       if (onConnect) onConnect()
@@ -229,15 +229,19 @@ export class MistxSocket {
     }
   }
 
-  public emitTransactionRequest(transaction: TransactionReq) {
-    this.socket.emit(Event.MISTX_BUNDLE_REQUEST, transaction)
+  public emitTransactionRequest(bundle: BundleReq) {
+    this.socket.emit(Event.MISTX_BUNDLE_REQUEST, bundle)
   }
 
-  public emitStatusRequest(transaction: TransactionReq) {
-    this.socket.emit(Event.BUNDLE_STATUS_REQUEST, transaction)
+  public emitStatusRequest(id: string) {
+    this.socket.emit(Event.BUNDLE_STATUS_REQUEST, {
+      serialized: id
+    })
   }
   
-  public emitTransactionCancellation(serialized: BundleStatusRes) {
-    this.socket.emit(Event.BUNDLE_CANCEL_REQUEST, serialized)
+  public emitTransactionCancellation(id: string) {
+    this.socket.emit(Event.BUNDLE_CANCEL_REQUEST, {
+      serialized: id
+    })
   }
 }

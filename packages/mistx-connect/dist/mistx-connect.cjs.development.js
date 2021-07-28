@@ -118,16 +118,20 @@ var MistxSocket = /*#__PURE__*/function () {
     };
   };
 
-  _proto.emitTransactionRequest = function emitTransactionRequest(transaction) {
-    this.socket.emit(exports.Event.MISTX_BUNDLE_REQUEST, transaction);
+  _proto.emitTransactionRequest = function emitTransactionRequest(bundle) {
+    this.socket.emit(exports.Event.MISTX_BUNDLE_REQUEST, bundle);
   };
 
-  _proto.emitStatusRequest = function emitStatusRequest(transaction) {
-    this.socket.emit(exports.Event.BUNDLE_STATUS_REQUEST, transaction);
+  _proto.emitStatusRequest = function emitStatusRequest(id) {
+    this.socket.emit(exports.Event.BUNDLE_STATUS_REQUEST, {
+      serialized: id
+    });
   };
 
-  _proto.emitTransactionCancellation = function emitTransactionCancellation(serialized) {
-    this.socket.emit(exports.Event.BUNDLE_CANCEL_REQUEST, serialized);
+  _proto.emitTransactionCancellation = function emitTransactionCancellation(id) {
+    this.socket.emit(exports.Event.BUNDLE_CANCEL_REQUEST, {
+      serialized: id
+    });
   };
 
   return MistxSocket;
