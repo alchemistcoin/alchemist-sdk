@@ -143,6 +143,7 @@ interface SocketOptions {
   onDisconnect?: (err: any) => void
   onError?: (err: any) => void
   onGasChange?: (gas: any) => void
+  onSocketSession: (session: any) => void
   onTransactionResponse?: (response: BundleRes) => void
   onTransactionUpdate?: (response: BundleStatusRes) => void
 }
@@ -182,6 +183,7 @@ export class MistxSocket {
     onDisconnect,
     onError,
     onGasChange,
+    onSocketSession,
     onTransactionResponse,
     onTransactionUpdate,
   }: SocketOptions) {
@@ -207,6 +209,7 @@ export class MistxSocket {
   
     this.socket.on(Event.SOCKET_SESSION, (session: any) => {
       localStorage.setItem(tokenKey, session.token)
+      if (onSocketSession) onSocketSession(session)
     })
   
     this.socket.on(Event.GAS_CHANGE, (gas: any) => {
