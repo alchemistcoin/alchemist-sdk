@@ -1,35 +1,31 @@
 {
-  "name": "alchemist-sdk",
-  "version": "3.1.1",
+  "name": "@alchemist-coin/mistx-core",
+  "license": "MIT",
+  "version": "4.0.2",
   "description": "🛠 An SDK for building applications on top of Uniswap.",
-  "author": "",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/alchemistcoin/alchemist-sdk.git"
-  },
-  "keywords": [
-    "alchemist",
-    "ethereum",
-    "uniswap",
-    "mist"
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "module": "dist/mistx-core.esm.js",
+  "files": [
+    "dist"
   ],
-  "module": "dist/sdk.esm.js",
+  "repository": "https://github.com/alchemistcoin/alchemist-sdk.git",
+  "keywords": [
+    "uniswap",
+    "ethereum"
+  ],
   "scripts": {
-    "bootstrap": "lerna bootstrap",
-    "publish:lerna": "lerna publish",
-    "clean": "lerna clean --yes && lerna exec -- rimraf yarn.lock dist/ .rts2_cache_{cjs,esm}/",
-    "build": "lerna run build",
-    "start": "lerna run --parallel --no-bail start -- --noClean",
-    "lint": "lerna run lint --parallel",
-    "test": "lerna run test --parallel"
+    "lint": "tsdx lint src test",
+    "build": "tsdx build",
+    "start": "tsdx watch",
+    "test": "tsdx test",
+    "prepublishOnly": "tsdx build"
   },
   "dependencies": {
-    "@ethersproject/bignumber": "^5.4.0",
     "@uniswap/v2-core": "^1.0.0",
     "big.js": "^5.2.2",
     "decimal.js-light": "^2.5.0",
     "jsbi": "^3.1.1",
-    "socket.io-client": "^4.1.2",
     "tiny-invariant": "^1.1.0",
     "tiny-warning": "^1.0.3",
     "toformat": "^2.0.0"
@@ -49,8 +45,7 @@
     "@ethersproject/solidity": "^5.0.2",
     "@types/big.js": "^4.0.5",
     "@types/jest": "^24.0.25",
-    "lerna": "^4.0.0",
-    "tsdx": "^0.14.1"
+    "tsdx": "^0.12.3"
   },
   "engines": {
     "node": ">=10"
@@ -60,13 +55,8 @@
     "semi": false,
     "singleQuote": true
   },
-  "bugs": {
-    "url": "https://github.com/alchemistcoin/alchemist-sdk/issues"
+  "publishConfig": {
+    "access": "public"
   },
-  "homepage": "https://github.com/alchemistcoin/alchemist-sdk#readme",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
-  "license": "MIT"
+  "gitHead": "1f4f7cb26c991eb59fed40cabcb37bfdf36af58e"
 }
