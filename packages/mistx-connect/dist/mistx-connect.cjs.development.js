@@ -124,13 +124,13 @@ var MistxSocket = /*#__PURE__*/function () {
 
   _proto.emitStatusRequest = function emitStatusRequest(id) {
     this.socket.emit(exports.Event.BUNDLE_STATUS_REQUEST, {
-      serialized: id
+      id: id
     });
   };
 
   _proto.emitTransactionCancellation = function emitTransactionCancellation(id) {
     this.socket.emit(exports.Event.BUNDLE_CANCEL_REQUEST, {
-      serialized: id
+      id: id
     });
   };
 
