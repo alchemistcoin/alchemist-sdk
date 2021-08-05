@@ -87,7 +87,7 @@ export interface SwapReq {
 }
 
 export interface BundleProcessed {
-  serialized: string
+  id: string
   transactions: TransactionProcessed[]
   bribe: BigNumberish
   sessionToken: string
