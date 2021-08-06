@@ -1916,11 +1916,6 @@ babel-plugin-transform-async-to-promises@^0.8.14:
   resolved "https://registry.yarnpkg.com/babel-plugin-transform-async-to-promises/-/babel-plugin-transform-async-to-promises-0.8.15.tgz#13b6d8ef13676b4e3c576d3600b85344bb1ba346"
   integrity sha512-fDXP68ZqcinZO2WCiimCL9zhGjGXOnn3D33zvbh+yheZ/qOrNVVDDIBtAaM3Faz8TRvQzHiRKsu3hfrBAhEncQ==
 
-babel-plugin-transform-jsbi-to-bigint@^1.3.1:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/babel-plugin-transform-jsbi-to-bigint/-/babel-plugin-transform-jsbi-to-bigint-1.4.0.tgz#04db5036c7821916c248b90ded792a1272bc9c8d"
-  integrity sha512-59f6ClwQBY/SKMVwKV/xoAqH/gnyZ6C5gSSPsEUCLPvvZULCDSE5Y3T62wjNTbpBcFzh0ReYz2mIe3u44mW9UQ==
-
 babel-plugin-transform-rename-import@^2.3.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/babel-plugin-transform-rename-import/-/babel-plugin-transform-rename-import-2.3.0.tgz#5d9d645f937b0ca5c26a24b2510a06277b6ffd9b"

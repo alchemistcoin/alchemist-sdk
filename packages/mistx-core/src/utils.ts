@@ -45,7 +45,7 @@ export function estimatedGasForMethod(methodName: string = 'swapTokensForExactET
 export function calculateMinerBribe(gasPriceToBeat: BigintIsh, estimatedGas: BigintIsh, margin: BigintIsh): JSBI {
   gasPriceToBeat = parseBigintIsh(gasPriceToBeat)
   estimatedGas = parseBigintIsh(estimatedGas)
-  const gasPriceToBeatWithMargin = calculateMargin(gasPriceToBeat, margin)
+  const gasPriceToBeatWithMargin = JSBI.subtract(calculateMargin(gasPriceToBeat, margin), gasPriceToBeat)
   return JSBI.multiply(gasPriceToBeatWithMargin, estimatedGas)
 }
 

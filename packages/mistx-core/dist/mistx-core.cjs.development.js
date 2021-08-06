@@ -758,7 +758,7 @@ function estimatedGasForMethod(methodName, numHops) {
 function calculateMinerBribe(gasPriceToBeat, estimatedGas, margin) {
   gasPriceToBeat = parseBigintIsh(gasPriceToBeat);
   estimatedGas = parseBigintIsh(estimatedGas);
-  var gasPriceToBeatWithMargin = calculateMargin(gasPriceToBeat, margin);
+  var gasPriceToBeatWithMargin = JSBI.subtract(calculateMargin(gasPriceToBeat, margin), gasPriceToBeat);
   return JSBI.multiply(gasPriceToBeatWithMargin, estimatedGas);
 } // add x%
 
