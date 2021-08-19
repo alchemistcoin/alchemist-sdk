@@ -7,7 +7,6 @@ export enum Event {
   SOCKET_ERR = 'SOCKET_ERR',
   MISTX_BUNDLE_REQUEST = 'MISTX_BUNDLE_REQUEST',
   BUNDLE_STATUS_REQUEST = 'BUNDLE_STATUS_REQUEST',
-  BUNDLE_STATUS_RESPONSE = 'BUNDLE_STATUS_RESPONSE',
   BUNDLE_RESPONSE = 'BUNDLE_RESPONSE',
   BUNDLE_CANCEL_REQUEST = 'BUNDLE_CANCEL_REQUEST'
 }
@@ -107,13 +106,6 @@ export interface BundleRes {
   error: string
 }
 
-export interface BundleStatusRes {
-  bundle: string | BundleProcessed // BundleProcessed.serialized
-  status: string
-  message: string
-  error: string
-}
-
 interface QuoteEventsMap {
   [Event.SOCKET_SESSION]: (response: SocketSession) => void
   [Event.SOCKET_ERR]: (err: any) => void
@@ -122,7 +114,6 @@ interface QuoteEventsMap {
   [Event.BUNDLE_RESPONSE]: (response: BundleRes) => void
   [Event.BUNDLE_CANCEL_REQUEST]: (serialized: any) => void // TO DO - any
   [Event.BUNDLE_STATUS_REQUEST]: (serialized: any) => void // TO DO - any
-  [Event.BUNDLE_STATUS_RESPONSE]: (serialized: BundleStatusRes) => void // TO DO - any
 }
 
 interface SocketOptions {
@@ -133,7 +124,6 @@ interface SocketOptions {
   onGasChange?: (gas: any) => void
   onSocketSession: (session: any) => void
   onTransactionResponse?: (response: BundleRes) => void
-  onTransactionUpdate?: (response: BundleStatusRes) => void
 }
 
 const defaultServerUrl = 'https://mistx-app-goerli.herokuapp.com'
@@ -162,7 +152,6 @@ export class MistxSocket {
     this.socket.off(Event.SOCKET_SESSION)
     this.socket.off(Event.GAS_CHANGE)
     this.socket.off(Event.BUNDLE_RESPONSE)
-    this.socket.off(Event.BUNDLE_STATUS_RESPONSE)
   }
 
   public init({
@@ -173,7 +162,6 @@ export class MistxSocket {
     onGasChange,
     onSocketSession,
     onTransactionResponse,
-    onTransactionUpdate,
   }: SocketOptions): () => void {
     this.socket.on('connect', () => {
       // console.log('websocket connected')
@@ -206,10 +194,6 @@ export class MistxSocket {
   
     this.socket.on(Event.BUNDLE_RESPONSE, (response: BundleRes) => {
       if (onTransactionResponse) onTransactionResponse(response)
-    })
-  
-    this.socket.on(Event.BUNDLE_STATUS_RESPONSE, (response: BundleStatusRes) => {
-      if (onTransactionUpdate) onTransactionUpdate(response)
     })
   
     return () => {
