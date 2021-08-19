@@ -64,7 +64,7 @@ export interface TransactionReq {
 
 export interface TransactionProcessed {
   serialized: string // serialized transaction
-  bundle: string // bundle.serialized
+  bundle: string // bundle.id
   raw: SwapReq | undefined // raw def. of each type of trade
   estimatedGas: number
   estimatedEffectiveGasPrice: number
@@ -87,7 +87,7 @@ export interface SwapReq {
 }
 
 export interface BundleProcessed {
-  serialized: string
+  id: string
   transactions: TransactionProcessed[]
   bribe: BigNumberish
   sessionToken: string
@@ -223,13 +223,13 @@ export class MistxSocket {
 
   public emitStatusRequest(id: string) {
     this.socket.emit(Event.BUNDLE_STATUS_REQUEST, {
-      serialized: id
+      id
     })
   }
   
   public emitTransactionCancellation(id: string) {
     this.socket.emit(Event.BUNDLE_CANCEL_REQUEST, {
-      serialized: id
+      id
     })
   }
 }
