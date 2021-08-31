@@ -1,22 +1,28 @@
 import { io, Socket } from 'socket.io-client'
-import { BigNumberish } from '@ethersproject/bignumber'
+import { BigNumberish, BigNumber } from '@ethersproject/bignumber'
 
 export enum Event {
-  GAS_CHANGE = 'GAS_CHANGE',
+  FEES_CHANGE = 'FEES_CHANGE',
   SOCKET_SESSION = 'SOCKET_SESSION',
   SOCKET_ERR = 'SOCKET_ERR',
+  BUNDLE_REQUEST = 'BUNDLE_REQUEST',
   MISTX_BUNDLE_REQUEST = 'MISTX_BUNDLE_REQUEST',
   BUNDLE_STATUS_REQUEST = 'BUNDLE_STATUS_REQUEST',
   BUNDLE_RESPONSE = 'BUNDLE_RESPONSE',
   BUNDLE_CANCEL_REQUEST = 'BUNDLE_CANCEL_REQUEST'
 }
 
-export interface Gas {
-  readonly rapid: string
-  readonly fast: string
-  readonly slow: string
-  readonly standard: string
-  readonly timestamp: number
+export interface Fee {
+  maxFeePerGas: BigNumber
+  maxPriorityFeePerGas: BigNumber
+}
+export interface Fees {
+  block: number
+  baseFeePerGas: BigNumber
+  default: Fee
+  low: Fee
+  med: Fee
+  high: Fee
 }
 
 export enum Status {
@@ -70,12 +76,12 @@ export interface TransactionProcessed {
 }
 
 export interface BundleReq {
-  transactions: TransactionReq[]
-  chainId: number
-  bribe: string // BigNumber
-  from: string
-  deadline: BigNumberish
-  simulateOnly: boolean
+  transactions: TransactionReq[] | string[]
+  chainId?: number
+  bribe?: string // BigNumber
+  from?: string
+  deadline?: BigNumberish
+  simulateOnly?: boolean
 }
 
 export interface SwapReq {
@@ -109,7 +115,8 @@ export interface BundleRes {
 interface QuoteEventsMap {
   [Event.SOCKET_SESSION]: (response: SocketSession) => void
   [Event.SOCKET_ERR]: (err: any) => void
-  [Event.GAS_CHANGE]: (response: Gas) => void
+  [Event.FEES_CHANGE]: (response: Fees) => void
+  [Event.BUNDLE_REQUEST]: (response: any) => void
   [Event.MISTX_BUNDLE_REQUEST]: (response: any) => void
   [Event.BUNDLE_RESPONSE]: (response: BundleRes) => void
   [Event.BUNDLE_CANCEL_REQUEST]: (serialized: any) => void // TO DO - any
@@ -121,7 +128,7 @@ interface SocketOptions {
   onConnectError?: (err: any) => void
   onDisconnect?: (err: any) => void
   onError?: (err: any) => void
-  onGasChange?: (gas: any) => void
+  onFeesChange?: (fees: Fees) => void
   onSocketSession: (session: any) => void
   onTransactionResponse?: (response: BundleRes) => void
 }
@@ -141,7 +148,6 @@ export class MistxSocket {
       reconnectionDelay: 5000,
       autoConnect: true
     })
-
     this.socket = socket
   }
 
@@ -150,8 +156,12 @@ export class MistxSocket {
     this.socket.off('connect_error')
     this.socket.off(Event.SOCKET_ERR)
     this.socket.off(Event.SOCKET_SESSION)
-    this.socket.off(Event.GAS_CHANGE)
+    this.socket.off(Event.FEES_CHANGE)
     this.socket.off(Event.BUNDLE_RESPONSE)
+  }
+
+  public closeConnection() {
+    this.socket.disconnect()
   }
 
   public init({
@@ -159,7 +169,7 @@ export class MistxSocket {
     onConnectError,
     onDisconnect,
     onError,
-    onGasChange,
+    onFeesChange,
     onSocketSession,
     onTransactionResponse,
   }: SocketOptions): () => void {
@@ -188,8 +198,30 @@ export class MistxSocket {
       if (onSocketSession) onSocketSession(session)
     })
   
-    this.socket.on(Event.GAS_CHANGE, (gas: any) => {
-      if (onGasChange) onGasChange(gas)
+    this.socket.on(Event.FEES_CHANGE, (response: Fees) => {
+      if (onFeesChange) {
+        const fees: Fees = {
+          block: response.block,
+          baseFeePerGas: BigNumber.from(response.baseFeePerGas),
+          default: {
+            maxFeePerGas: BigNumber.from(response.default.maxFeePerGas),
+            maxPriorityFeePerGas: BigNumber.from(response.default.maxPriorityFeePerGas)
+          },
+          low: {
+            maxFeePerGas: BigNumber.from(response.low.maxFeePerGas),
+            maxPriorityFeePerGas: BigNumber.from(response.low.maxPriorityFeePerGas)
+          },
+          med: {
+            maxFeePerGas: BigNumber.from(response.med.maxFeePerGas),
+            maxPriorityFeePerGas: BigNumber.from(response.med.maxPriorityFeePerGas)
+          },
+          high: {
+            maxFeePerGas: BigNumber.from(response.high.maxFeePerGas),
+            maxPriorityFeePerGas: BigNumber.from(response.high.maxPriorityFeePerGas)
+          },
+        }
+        onFeesChange(fees)
+      }
     })
   
     this.socket.on(Event.BUNDLE_RESPONSE, (response: BundleRes) => {
@@ -199,6 +231,10 @@ export class MistxSocket {
     return () => {
       this.disconnect()
     }
+  }
+
+  public emitBundleRequest(bundle: BundleReq) {
+    this.socket.emit(Event.BUNDLE_REQUEST, bundle)
   }
 
   public emitTransactionRequest(bundle: BundleReq) {
