@@ -183,40 +183,64 @@ export class MistxSocket {
     onSocketSession,
     onTransactionResponse,
   }: SocketOptions): () => void {
+    /**
+     * onConnect
+     */
     this.socket.on('connect', () => {
       // console.log('websocket connected')
       if (onConnect) onConnect()
     })
   
+    /**
+     * onConnectError
+     */
     this.socket.on('connect_error', (err: any) => {
       // console.log('websocket connect error', err)
       if (onConnectError) onConnectError(err)
     })
   
+    /**
+     * onDisconnect
+     */
     this.socket.on('disconnect', (err: any) => {
       // console.log('websocket disconnect', err)
       if (onDisconnect) onDisconnect(err)
     })
-  
+    
+    /**
+     * onError
+     */
     this.socket.on(Event.SOCKET_ERR, (err: any) => {
       // console.log('websocket err', err)
       if (onError) onError(err)
     })
   
+    /**
+     * onSocketSession
+     * - Store the session token in the browser local storage
+     */
     this.socket.on(Event.SOCKET_SESSION, (session: any) => {
       localStorage.setItem(tokenKey, session.token)
       if (onSocketSession) onSocketSession(session)
     })
   
+    /**
+     * onFeesChange
+     */
     this.socket.on(Event.FEES_CHANGE, (response: Fees) => {
       if (onFeesChange) onFeesChange(response)
-      
     })
   
+    /**
+     * onTransactionResponse
+     */
     this.socket.on(Event.BUNDLE_RESPONSE, (response: BundleRes | BundleResApi) => {
       if (onTransactionResponse) onTransactionResponse(response)
     })
-  
+
+    /**
+     * Returns function used to stop listening to all connected socket events.
+     */
     return () => {
       this.disconnect()
     }
@@ -231,14 +255,10 @@ export class MistxSocket {
   }
 
   public emitStatusRequest(id: string) {
-    this.socket.emit(Event.BUNDLE_STATUS_REQUEST, {
-      id
-    })
+    this.socket.emit(Event.BUNDLE_STATUS_REQUEST, { id })
   }
   
   public emitTransactionCancellation(id: string) {
-    this.socket.emit(Event.BUNDLE_CANCEL_REQUEST, {
-      id
-    })
+    this.socket.emit(Event.BUNDLE_CANCEL_REQUEST, { id })
   }
 }
