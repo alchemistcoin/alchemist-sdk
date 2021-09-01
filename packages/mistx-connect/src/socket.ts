@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client'
-import { BigNumberish, BigNumber } from '@ethersproject/bignumber'
+import { BigNumberish } from '@ethersproject/bignumber'
 
 export enum Event {
   FEES_CHANGE = 'FEES_CHANGE',
@@ -14,12 +14,12 @@ export enum Event {
 }
 
 export interface Fee {
-  maxFeePerGas: BigNumber
-  maxPriorityFeePerGas: BigNumber
+  maxFeePerGas: BigNumberish
+  maxPriorityFeePerGas: BigNumberish
 }
 export interface Fees {
   block: number
-  baseFeePerGas: BigNumber
+  baseFeePerGas: BigNumberish
   default: Fee
   low: Fee
   med: Fee
@@ -113,6 +113,16 @@ export interface BundleRes {
   error: string
 }
 
+export interface BundleResApi {
+  bundle: {
+    id: string;
+    transactions: string[];
+  };
+  status: string;
+  message: string;
+  error: string;
+}
+
 export interface BundleStatusRes {
   bundle: string | BundleProcessed // BundleProcessed.serialized
   status: string
@@ -126,7 +136,7 @@ interface QuoteEventsMap {
   [Event.FEES_CHANGE]: (response: Fees) => void
   [Event.BUNDLE_REQUEST]: (response: any) => void
   [Event.MISTX_BUNDLE_REQUEST]: (response: any) => void
-  [Event.BUNDLE_RESPONSE]: (response: BundleRes) => void
+  [Event.BUNDLE_RESPONSE]: (response: BundleRes | BundleResApi) => void
   [Event.BUNDLE_CANCEL_REQUEST]: (serialized: any) => void // TO DO - any
   [Event.BUNDLE_STATUS_REQUEST]: (serialized: any) => void // TO DO - any
   [Event.BUNDLE_STATUS_RESPONSE]: (serialized: BundleStatusRes) => void // TO DO - any
@@ -138,8 +148,8 @@ interface SocketOptions {
   onDisconnect?: (err: any) => void
   onError?: (err: any) => void
   onFeesChange?: (fees: Fees) => void
-  onSocketSession: (session: any) => void
-  onTransactionResponse?: (response: BundleRes) => void
+  onSocketSession?: (session: any) => void
+  onTransactionResponse?: (response: BundleRes | BundleResApi) => void
   onTransactionUpdate?: (response: BundleStatusRes) => void
 }
 
@@ -211,32 +221,11 @@ export class MistxSocket {
     })
   
     this.socket.on(Event.FEES_CHANGE, (response: Fees) => {
-      if (onFeesChange) {
-        const fees: Fees = {
-          block: response.block,
-          baseFeePerGas: BigNumber.from(response.baseFeePerGas),
-          default: {
-            maxFeePerGas: BigNumber.from(response.default.maxFeePerGas),
-            maxPriorityFeePerGas: BigNumber.from(response.default.maxPriorityFeePerGas)
-          },
-          low: {
-            maxFeePerGas: BigNumber.from(response.low.maxFeePerGas),
-            maxPriorityFeePerGas: BigNumber.from(response.low.maxPriorityFeePerGas)
-          },
-          med: {
-            maxFeePerGas: BigNumber.from(response.med.maxFeePerGas),
-            maxPriorityFeePerGas: BigNumber.from(response.med.maxPriorityFeePerGas)
-          },
-          high: {
-            maxFeePerGas: BigNumber.from(response.high.maxFeePerGas),
-            maxPriorityFeePerGas: BigNumber.from(response.high.maxPriorityFeePerGas)
-          },
-        }
-        onFeesChange(fees)
-      }
+      if (onFeesChange) onFeesChange(response)
+      
     })
   
-    this.socket.on(Event.BUNDLE_RESPONSE, (response: BundleRes) => {
+    this.socket.on(Event.BUNDLE_RESPONSE, (response: BundleRes | BundleResApi) => {
       if (onTransactionResponse) onTransactionResponse(response)
     })
   
