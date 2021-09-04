@@ -91,6 +91,19 @@ export interface SwapReq {
   to: string
 }
 
+export interface Backrun {
+  best: {
+    backrunner: string
+    count: number
+    duration: number
+    totalGasLimit: BigNumberish
+    totalGasPrice: BigNumberish
+    totalMaxFeePerGas: BigNumberish
+    totalMaxPriorityFeePerGas: BigNumberish
+    transactions: any[]
+  }
+}
+
 export interface BundleProcessed {
   id: string
   transactions: TransactionProcessed[]
@@ -103,6 +116,7 @@ export interface BundleProcessed {
   from: string
   deadline: BigNumberish
   simulateOnly: boolean
+  backrun: Backrun
 }
 
 export interface BundleRes {
