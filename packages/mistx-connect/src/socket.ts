@@ -2,21 +2,27 @@ import { io, Socket } from 'socket.io-client'
 import { BigNumberish } from '@ethersproject/bignumber'
 
 export enum Event {
-  GAS_CHANGE = 'GAS_CHANGE',
+  FEES_CHANGE = 'FEES_CHANGE',
   SOCKET_SESSION = 'SOCKET_SESSION',
   SOCKET_ERR = 'SOCKET_ERR',
+  BUNDLE_REQUEST = 'BUNDLE_REQUEST',
   MISTX_BUNDLE_REQUEST = 'MISTX_BUNDLE_REQUEST',
   BUNDLE_STATUS_REQUEST = 'BUNDLE_STATUS_REQUEST',
   BUNDLE_RESPONSE = 'BUNDLE_RESPONSE',
   BUNDLE_CANCEL_REQUEST = 'BUNDLE_CANCEL_REQUEST'
 }
 
-export interface Gas {
-  readonly rapid: string
-  readonly fast: string
-  readonly slow: string
-  readonly standard: string
-  readonly timestamp: number
+export interface Fee {
+  maxFeePerGas: BigNumberish
+  maxPriorityFeePerGas: BigNumberish
+}
+export interface Fees {
+  block: number
+  baseFeePerGas: BigNumberish
+  default: Fee
+  low: Fee
+  med: Fee
+  high: Fee
 }
 
 export enum Status {
@@ -70,12 +76,12 @@ export interface TransactionProcessed {
 }
 
 export interface BundleReq {
-  transactions: TransactionReq[]
-  chainId: number
-  bribe: string // BigNumber
-  from: string
-  deadline: BigNumberish
-  simulateOnly: boolean
+  transactions: TransactionReq[] | string[]
+  chainId?: number
+  bribe?: string // BigNumber
+  from?: string
+  deadline?: BigNumberish
+  simulateOnly?: boolean
 }
 
 export interface SwapReq {
@@ -83,6 +89,19 @@ export interface SwapReq {
   amount1: BigNumberish
   path: Array<string>
   to: string
+}
+
+export interface Backrun {
+  best: {
+    backrunner: string
+    count: number
+    duration: number
+    totalGasLimit: BigNumberish
+    totalGasPrice: BigNumberish
+    totalMaxFeePerGas: BigNumberish
+    totalMaxPriorityFeePerGas: BigNumberish
+    transactions: any[]
+  }
 }
 
 export interface BundleProcessed {
@@ -97,6 +116,7 @@ export interface BundleProcessed {
   from: string
   deadline: BigNumberish
   simulateOnly: boolean
+  backrun: Backrun
 }
 
 export interface BundleRes {
@@ -106,12 +126,23 @@ export interface BundleRes {
   error: string
 }
 
+export interface BundleResApi {
+  bundle: {
+    id: string;
+    transactions: string[];
+  };
+  status: string;
+  message: string;
+  error: string;
+}
+
 interface QuoteEventsMap {
   [Event.SOCKET_SESSION]: (response: SocketSession) => void
   [Event.SOCKET_ERR]: (err: any) => void
-  [Event.GAS_CHANGE]: (response: Gas) => void
+  [Event.FEES_CHANGE]: (response: Fees) => void
+  [Event.BUNDLE_REQUEST]: (response: any) => void
   [Event.MISTX_BUNDLE_REQUEST]: (response: any) => void
-  [Event.BUNDLE_RESPONSE]: (response: BundleRes) => void
+  [Event.BUNDLE_RESPONSE]: (response: BundleRes | BundleResApi) => void
   [Event.BUNDLE_CANCEL_REQUEST]: (serialized: any) => void // TO DO - any
   [Event.BUNDLE_STATUS_REQUEST]: (serialized: any) => void // TO DO - any
 }
@@ -121,9 +152,9 @@ interface SocketOptions {
   onConnectError?: (err: any) => void
   onDisconnect?: (err: any) => void
   onError?: (err: any) => void
-  onGasChange?: (gas: any) => void
-  onSocketSession: (session: any) => void
-  onTransactionResponse?: (response: BundleRes) => void
+  onFeesChange?: (fees: Fees) => void
+  onSocketSession?: (session: any) => void
+  onTransactionResponse?: (response: BundleRes | BundleResApi) => void
 }
 
 const defaultServerUrl = 'https://mistx-app-goerli.herokuapp.com'
@@ -141,7 +172,6 @@ export class MistxSocket {
       reconnectionDelay: 5000,
       autoConnect: true
     })
-
     this.socket = socket
   }
 
@@ -150,8 +180,12 @@ export class MistxSocket {
     this.socket.off('connect_error')
     this.socket.off(Event.SOCKET_ERR)
     this.socket.off(Event.SOCKET_SESSION)
-    this.socket.off(Event.GAS_CHANGE)
+    this.socket.off(Event.FEES_CHANGE)
     this.socket.off(Event.BUNDLE_RESPONSE)
+  }
+
+  public closeConnection() {
+    this.socket.disconnect()
   }
 
   public init({
@@ -159,46 +193,75 @@ export class MistxSocket {
     onConnectError,
     onDisconnect,
     onError,
-    onGasChange,
+    onFeesChange,
     onSocketSession,
     onTransactionResponse,
   }: SocketOptions): () => void {
+    /**
+     * onConnect
+     */
     this.socket.on('connect', () => {
       // console.log('websocket connected')
       if (onConnect) onConnect()
     })
   
+    /**
+     * onConnectError
+     */
     this.socket.on('connect_error', (err: any) => {
       // console.log('websocket connect error', err)
       if (onConnectError) onConnectError(err)
     })
   
+    /**
+     * onDisconnect
+     */
     this.socket.on('disconnect', (err: any) => {
       // console.log('websocket disconnect', err)
       if (onDisconnect) onDisconnect(err)
     })
-  
+    
+    /**
+     * onError
+     */
     this.socket.on(Event.SOCKET_ERR, (err: any) => {
       // console.log('websocket err', err)
       if (onError) onError(err)
     })
   
+    /**
+     * onSocketSession
+     * - Store the session token in the browser local storage
+     */
     this.socket.on(Event.SOCKET_SESSION, (session: any) => {
       localStorage.setItem(tokenKey, session.token)
       if (onSocketSession) onSocketSession(session)
     })
   
-    this.socket.on(Event.GAS_CHANGE, (gas: any) => {
-      if (onGasChange) onGasChange(gas)
+    /**
+     * onFeesChange
+     */
+    this.socket.on(Event.FEES_CHANGE, (response: Fees) => {
+      if (onFeesChange) onFeesChange(response)
     })
   
-    this.socket.on(Event.BUNDLE_RESPONSE, (response: BundleRes) => {
+    /**
+     * onTransactionResponse
+     */
+    this.socket.on(Event.BUNDLE_RESPONSE, (response: BundleRes | BundleResApi) => {
       if (onTransactionResponse) onTransactionResponse(response)
     })
-  
+
+    /**
+     * Returns function used to stop listening to all connected socket events.
+     */
     return () => {
       this.disconnect()
     }
+  }
+
+  public emitBundleRequest(bundle: BundleReq) {
+    this.socket.emit(Event.BUNDLE_REQUEST, bundle)
   }
 
   public emitTransactionRequest(bundle: BundleReq) {
@@ -206,14 +269,10 @@ export class MistxSocket {
   }
 
   public emitStatusRequest(id: string) {
-    this.socket.emit(Event.BUNDLE_STATUS_REQUEST, {
-      id
-    })
+    this.socket.emit(Event.BUNDLE_STATUS_REQUEST, { id })
   }
   
   public emitTransactionCancellation(id: string) {
-    this.socket.emit(Event.BUNDLE_CANCEL_REQUEST, {
-      id
-    })
+    this.socket.emit(Event.BUNDLE_CANCEL_REQUEST, { id })
   }
 }
