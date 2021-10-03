@@ -22,6 +22,7 @@
     "prepublishOnly": "tsdx build"
   },
   "dependencies": {
+    "@ethersproject/solidity": "^5.0.2",
     "@uniswap/v2-core": "^1.0.0",
     "big.js": "^5.2.2",
     "decimal.js-light": "^2.5.0",
@@ -42,7 +43,6 @@
     "@ethersproject/contracts": "^5.0.2",
     "@ethersproject/networks": "^5.0.2",
     "@ethersproject/providers": "^5.0.5",
-    "@ethersproject/solidity": "^5.0.2",
     "@types/big.js": "^4.0.5",
     "@types/jest": "^24.0.25",
     "tsdx": "^0.12.3"
