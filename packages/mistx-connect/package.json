@@ -1,11 +1,7 @@
 {
 	"name": "@alchemist-coin/mistx-connect",
 	"license": "MIT",
-<<<<<<< HEAD
 	"version": "4.5.1-alpha.0",
-=======
-	"version": "4.5.1",
->>>>>>> 50f96e7 (v4.5.1)
 	"description": "🛠 An SDK for sending transactions to flashbots.",
 	"main": "dist/index.js",
 	"typings": "dist/index.d.ts",
