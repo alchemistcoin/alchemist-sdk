@@ -25,7 +25,11 @@
     "prepublishOnly": "tsdx build"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@alchemist-coin/mistx-core": "^5.0.0-alpha.3",
+=======
+    "@alchemist-coin/mistx-core": "^5.0.0-alpha.1",
+>>>>>>> c23d852 (v5.0.0-alpha.1)
     "@ethersproject/abi": "^5.0.12",
     "@ethersproject/solidity": "^5.0.9",
     "@uniswap/v3-periphery": "^1.1.1",
