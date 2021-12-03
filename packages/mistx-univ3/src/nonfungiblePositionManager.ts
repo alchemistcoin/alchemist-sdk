@@ -3,11 +3,11 @@ import {
   Percent,
   Token,
   CurrencyAmount,
+  JSBI,
   validateAndParseAddress,
   Currency,
   NativeCurrency
 } from '@alchemist-coin/mistx-core'
-import JSBI from 'jsbi'
 import invariant from 'tiny-invariant'
 import { Position } from './entities/position'
 import { ONE, ZERO } from './internalConstants'

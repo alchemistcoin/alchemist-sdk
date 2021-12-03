@@ -1,6 +1,5 @@
-import JSBI from 'jsbi'
 import invariant from 'tiny-invariant'
-import { BigintIsh } from '@alchemist-coin/mistx-core'
+import { BigintIsh, JSBI } from '@alchemist-coin/mistx-core'
 import { TickMath } from '../utils'
 
 export interface TickConstructorArgs {

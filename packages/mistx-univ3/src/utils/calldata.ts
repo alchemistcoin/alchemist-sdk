@@ -1,5 +1,4 @@
-import { BigintIsh } from '@alchemist-coin/mistx-core'
-import JSBI from 'jsbi'
+import { JSBI, BigintIsh } from '@alchemist-coin/mistx-core'
 
 /**
  * Generated method parameters for executing a call.

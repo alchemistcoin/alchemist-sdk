@@ -1,5 +1,4 @@
-import { Price, Token } from '@alchemist-coin/mistx-core'
-import JSBI from 'jsbi'
+import { JSBI, Price, Token } from '@alchemist-coin/mistx-core'
 import { Q192 } from '../internalConstants'
 import { encodeSqrtRatioX96 } from './encodeSqrtRatioX96'
 import { TickMath } from './tickMath'

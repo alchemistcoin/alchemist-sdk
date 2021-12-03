@@ -1,5 +1,4 @@
-import JSBI from 'jsbi'
-import { BigintIsh, sqrt } from '@alchemist-coin/mistx-core'
+import { BigintIsh, JSBI, sqrt } from '@alchemist-coin/mistx-core'
 
 /**
  * Returns the sqrt ratio as a Q64.96 corresponding to a given ratio of amount1 and amount0

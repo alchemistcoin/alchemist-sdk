@@ -1,5 +1,4 @@
-import { Percent, Token } from '@alchemist-coin/mistx-core'
-import JSBI from 'jsbi'
+import { JSBI, Percent, Token } from '@alchemist-coin/mistx-core'
 import { Payments } from './payments'
 
 const recipient = '0x0000000000000000000000000000000000000003'

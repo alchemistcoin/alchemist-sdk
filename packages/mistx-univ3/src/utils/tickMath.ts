@@ -1,5 +1,4 @@
-import { MaxUint256 } from '@alchemist-coin/mistx-core'
-import JSBI from 'jsbi'
+import { JSBI, MaxUint256 } from '@alchemist-coin/mistx-core'
 import invariant from 'tiny-invariant'
 import { ONE, ZERO } from '../internalConstants'
 import { mostSignificantBit } from './mostSignificantBit'
