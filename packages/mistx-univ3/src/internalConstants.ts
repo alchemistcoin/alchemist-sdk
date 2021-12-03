@@ -1,4 +1,4 @@
-import JSBI from 'jsbi'
+import { JSBI } from '@alchemist-coin/mistx-core'
 
 // constants used internally but not expected to be used externally
 export const NEGATIVE_ONE = JSBI.BigInt(-1)

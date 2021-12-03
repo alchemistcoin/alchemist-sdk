@@ -1,5 +1,4 @@
-import { BigintIsh } from '@alchemist-coin/mistx-core'
-import JSBI from 'jsbi'
+import { BigintIsh, JSBI } from '@alchemist-coin/mistx-core'
 import { Q96 } from '../internalConstants'
 
 /**
