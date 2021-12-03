@@ -4,7 +4,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "5.0.0-alpha.2",
+  "version": "5.0.0-alpha.3",
   "description": "⚒️ An SDK for using Uniswap V3 with MistX",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -25,7 +25,7 @@
     "prepublishOnly": "tsdx build"
   },
   "dependencies": {
-    "@alchemist-coin/mistx-core": "^5.0.0-alpha.1",
+    "@alchemist-coin/mistx-core": "^5.0.0-alpha.3",
     "@ethersproject/abi": "^5.0.12",
     "@ethersproject/solidity": "^5.0.9",
     "@uniswap/v3-periphery": "^1.1.1",
