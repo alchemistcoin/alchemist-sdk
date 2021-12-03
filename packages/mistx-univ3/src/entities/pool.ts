@@ -1,5 +1,4 @@
-import { BigintIsh, Price, Token, CurrencyAmount } from '@alchemist-coin/mistx-core'
-import JSBI from 'jsbi'
+import { BigintIsh, JSBI, Price, Token, CurrencyAmount } from '@alchemist-coin/mistx-core'
 import invariant from 'tiny-invariant'
 import { FACTORY_ADDRESS, FeeAmount, TICK_SPACINGS } from '../constants'
 import { NEGATIVE_ONE, ONE, Q192, ZERO } from '../internalConstants'

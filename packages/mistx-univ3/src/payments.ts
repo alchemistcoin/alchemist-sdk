@@ -1,7 +1,6 @@
-import JSBI from 'jsbi'
 import { Interface } from '@ethersproject/abi'
 import { abi } from '@uniswap/v3-periphery/artifacts/contracts/interfaces/IPeripheryPaymentsWithFee.sol/IPeripheryPaymentsWithFee.json'
-import { Percent, Token, validateAndParseAddress } from '@alchemist-coin/mistx-core'
+import { JSBI, Percent, Token, validateAndParseAddress } from '@alchemist-coin/mistx-core'
 import { toHex } from './utils/calldata'
 
 export interface FeeOptions {

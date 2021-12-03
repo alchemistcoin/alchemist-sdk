@@ -10,7 +10,8 @@ import { Price } from './Price'
 import { Pair } from './Pair'
 import { Route } from './Route'
 import { Ether } from './natives'
-import { currencyEquals, Token, WETH} from './Token'
+import { currencyEquals, Token } from './Token'
+import { WETH } from './weth'
 
 
 // minimal interface so the input output comparator may be shared across types

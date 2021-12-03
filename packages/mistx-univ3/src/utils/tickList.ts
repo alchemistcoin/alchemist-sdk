@@ -1,4 +1,4 @@
-import JSBI from 'jsbi'
+import { JSBI } from '@alchemist-coin/mistx-core'
 import invariant from 'tiny-invariant'
 import { ZERO } from '../internalConstants'
 import { isSorted } from './isSorted'

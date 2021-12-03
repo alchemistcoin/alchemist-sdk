@@ -1,5 +1,4 @@
-import { BigintIsh, MaxUint256, Percent, Price, CurrencyAmount, Token } from '@alchemist-coin/mistx-core'
-import JSBI from 'jsbi'
+import { BigintIsh, JSBI, MaxUint256, Percent, Price, CurrencyAmount, Token } from '@alchemist-coin/mistx-core'
 import invariant from 'tiny-invariant'
 import { ZERO } from '../internalConstants'
 import { maxLiquidityForAmounts } from '../utils/maxLiquidityForAmounts'

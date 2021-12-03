@@ -1,4 +1,4 @@
-import JSBI from 'jsbi'
+import { JSBI } from '@alchemist-coin/mistx-core'
 import { NEGATIVE_ONE, ZERO } from '../internalConstants'
 
 export abstract class LiquidityMath {
