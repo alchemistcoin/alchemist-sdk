@@ -24,6 +24,7 @@ export interface Fees {
   low: Fee
   med: Fee
   high: Fee
+  chainId: number
 }
 
 export enum Status {
