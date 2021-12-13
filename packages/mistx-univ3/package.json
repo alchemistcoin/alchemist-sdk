@@ -4,7 +4,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "5.0.0-alpha.3",
+  "version": "5.0.0-alpha.4",
   "description": "⚒️ An SDK for using Uniswap V3 with MistX",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
