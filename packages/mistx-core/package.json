@@ -1,11 +1,7 @@
 {
   "name": "@alchemist-coin/mistx-core",
   "license": "MIT",
-<<<<<<< HEAD
-  "version": "5.0.0-alpha.3",
-=======
   "version": "5.0.0-alpha.5",
->>>>>>> 981c3816404ad86b61e3bda42324b92cefa88340
   "description": "🛠 An SDK for building applications on top of Uniswap.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
