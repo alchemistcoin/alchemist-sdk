@@ -8,6 +8,10 @@ import { Percent } from './Percent'
 import { Price } from './Price'
 import { Pair } from './Pair'
 import { Route } from './Route'
+<<<<<<< HEAD
+=======
+import { Ether } from './natives'
+>>>>>>> 981c3816404ad86b61e3bda42324b92cefa88340
 import { currencyEquals, Token } from './Token'
 import { WETH } from './weth'
 

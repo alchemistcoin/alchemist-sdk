@@ -16,6 +16,7 @@ export interface Fee {
   maxFeePerGas: BigNumberish
   maxPriorityFeePerGas: BigNumberish
 }
+
 export interface Fees {
   block: number
   baseFeePerGas: BigNumberish
@@ -23,6 +24,7 @@ export interface Fees {
   low: Fee
   med: Fee
   high: Fee
+  chainId: number
 }
 
 export enum Status {
@@ -94,14 +96,29 @@ export interface SwapReq {
 export interface Backrun {
   best: {
     backrunner: string
-    count: number
     duration: number
-    totalGasLimit: BigNumberish
-    totalGasPrice: BigNumberish
-    totalMaxFeePerGas: BigNumberish
+    count: number
+    transactions: IBackrunTransactionProcessed[]
     totalMaxPriorityFeePerGas: BigNumberish
-    transactions: any[]
+    totalMaxFeePerGas: BigNumberish
+    totalGasPrice: BigNumberish
+    totalGasLimit: BigNumberish
+    totalValueETH?: number
+    totalValueUSD?: number
   }
+}
+
+export interface IBackrunTransactionProcessed {
+  serializedOrigin: string
+  serializedBackrun: string
+  maxPriorityFeePerGas: BigNumberish
+  maxFeePerGas: BigNumberish
+  gasPrice: BigNumberish
+  gasLimit: BigNumberish
+  blockNumber?: number
+  timestamp?: number
+  valueETH?: number
+  valueUSD?: number
 }
 
 export interface BundleProcessed {
