@@ -1,7 +1,6 @@
 import invariant from 'tiny-invariant'
-import JSBI from 'jsbi'
-import { BigintIsh, Exchange, ONE, TradeType, ZERO, MethodName } from '../constants'
-import { sortedInsert, calculateMinerBribe, estimatedGasForMethod, calculateMargin, computePriceImpact } from '../utils'
+import { BigintIsh, Exchange, ONE, TradeType, ZERO} from '../constants'
+import { sortedInsert, computePriceImpact } from '../utils'
 import { Currency } from './Currency'
 import { CurrencyAmount } from './CurrencyAmount'
 import { Fraction } from './Fraction'
@@ -9,7 +8,6 @@ import { Percent } from './Percent'
 import { Price } from './Price'
 import { Pair } from './Pair'
 import { Route } from './Route'
-import { Ether } from './natives'
 import { currencyEquals, Token } from './Token'
 import { WETH } from './weth'
 
@@ -21,15 +19,6 @@ interface InputOutput<TInput extends Currency, TOutput extends Currency> {
 }
 
 export type MinTradeEstimate = { [tradeType in TradeType]: CurrencyAmount<Token|Currency> }
-
-type BribeEstimates = { [methodName in MethodName]: CurrencyAmount<Currency>}
-
-export type BribeEstimate = {
-  estimates: BribeEstimates,
-  minBribe: CurrencyAmount<Currency>,
-  maxBribe: CurrencyAmount<Currency>,
-  meanBribe: CurrencyAmount<Currency>, 
-}
 
 // comparator function that allows sorting trades by their output amounts, in decreasing order, and then input amounts
 // in increasing order. i.e. the best trades have the most outputs for the least inputs and are sorted first
@@ -131,11 +120,7 @@ export class Trade<
   /**
    * The bribe amount needed to execute the trade
    */
-  public readonly minerBribe: CurrencyAmount<Token>
-  /**
-   * The estimated gas used for the trade
-   */
-  public readonly estimatedGas: BigintIsh
+  public readonly protectionFee: CurrencyAmount<Token>
   /**
    * The price expressed in terms of output amount/input amount.
    */
@@ -150,32 +135,28 @@ export class Trade<
     * Constructs an exact in trade with the given amount in and route
     * @param route route of the exact in trade
     * @param amountIn the amount being passed in
-    * @param gasPriceToBeat the gas price used to calculate the bribe
-    * @param minerBribeMargin the margin to beat the gas price by
+    * @param protectionFeeAmount the eth fee amount paid out of the quote
     */
     public static exactIn<TInput extends Currency, TOutput extends Currency>(
     route: Route<TInput, TOutput>,
     amountIn: CurrencyAmount<TInput>,
-    gasPriceToBeat: BigintIsh,
-    minerBribeMargin: BigintIsh
+    protectionFeeAmount: BigintIsh,
   ): Trade<TInput, TOutput, TradeType.EXACT_INPUT> {
-    return new Trade(route, amountIn, TradeType.EXACT_INPUT, gasPriceToBeat, minerBribeMargin)
+    return new Trade(route, amountIn, TradeType.EXACT_INPUT, protectionFeeAmount)
   }
 
   /**
    * Constructs an exact out trade with the given amount out and route
    * @param route route of the exact out trade
    * @param amountOut the amount returned by the trade
-   * @param gasPriceToBeat the gas price used to calculate the bribe
-  * @param minerBribeMargin the margin to beat the gas price by
+   * @param protectionFeeAmount the eth fee amount paid out of the quote
    */
    public static exactOut<TInput extends Currency, TOutput extends Currency>(
     route: Route<TInput, TOutput>,
     amountOut: CurrencyAmount<TOutput>,
-    gasPriceToBeat: BigintIsh,
-    minerBribeMargin: BigintIsh
+    protectionFeeAmount: BigintIsh
   ): Trade<TInput, TOutput, TradeType.EXACT_OUTPUT> {
-    return new Trade(route, amountOut, TradeType.EXACT_OUTPUT, gasPriceToBeat, minerBribeMargin)
+    return new Trade(route, amountOut, TradeType.EXACT_OUTPUT, protectionFeeAmount)
   }
 
   public constructor(
@@ -184,23 +165,18 @@ export class Trade<
       ? CurrencyAmount<TInput>
       : CurrencyAmount<TOutput>,
     tradeType: TTradeType,
-    gasPriceToBeat: BigintIsh,
-    minerBribeMargin: BigintIsh
+    protectionFeeAmount: BigintIsh,
   ) {
     this.route = route
     this.tradeType = tradeType
+    this.protectionFee = CurrencyAmount.fromRawAmount(WETH[route.chainId], protectionFeeAmount)
 
     const amounts: CurrencyAmount<Token>[] = new Array(route.path.length)
     const nextPairs: Pair[] = new Array(route.pairs.length)
     const etherIn = route.input.isNative
     const etherOut = route.output.isNative
-    const methodName = Trade.methodNameForTradeType(tradeType, etherIn, etherOut)
-    const estimatedGas = estimatedGasForMethod(methodName, (route.path.length - 1).toString())
-    const minerBribe = calculateMinerBribe(gasPriceToBeat, estimatedGas, minerBribeMargin)
-
-    this.estimatedGas = estimatedGas.toString()
-    this.minerBribe = CurrencyAmount.fromRawAmount(WETH[route.chainId], minerBribe)
-    // this.minerBribe = CurrencyAmount.ether(minerBribe)
+    
+    
 
     let modifiedInput: CurrencyAmount<Token> = amount.wrapped
     let modifiedOutput: CurrencyAmount<Token> = amount.wrapped
@@ -219,10 +195,10 @@ export class Trade<
         if (etherIn && i === 0) {
           // reduce the inputAmount by this.minerBribe
           invariant(
-            inputAmount.greaterThan(this.minerBribe),
-            `Miner bribe ${this.minerBribe.toExact()} is greater than input ETH ${inputAmount.toExact()}`
+            inputAmount.greaterThan(this.protectionFee),
+            `Miner bribe ${this.protectionFee.toExact()} is greater than input ETH ${inputAmount.toExact()}`
           )
-          const modifiedAmount = inputAmount.subtract(this.minerBribe)
+          const modifiedAmount = inputAmount.subtract(this.protectionFee)
           // console.log('original amount in', inputAmount.toExact())
           // console.log('modified amount in', modifiedAmount.toExact())
           inputAmount = modifiedAmount
@@ -236,10 +212,10 @@ export class Trade<
         if (etherOut && i === route.path.length - 2) {
           // reduce the outputAmount by this.minerBribe
           invariant(
-            outputAmount.greaterThan(this.minerBribe),
-            `Miner bribe ${this.minerBribe.toExact()} is greater than output ETH ${outputAmount.toExact()}`
+            outputAmount.greaterThan(this.protectionFee),
+            `Miner bribe ${this.protectionFee.toExact()} is greater than output ETH ${outputAmount.toExact()}`
           )
-          const modifiedAmount = outputAmount.subtract(this.minerBribe)
+          const modifiedAmount = outputAmount.subtract(this.protectionFee)
           // console.log('original amount out', outputAmount.toExact())
           // console.log('modified amount out', modifiedAmount.toExact())
           amounts[i + 1] = modifiedAmount
@@ -260,7 +236,7 @@ export class Trade<
         // the output increased by the minerBribe
         if (etherOut && i === route.path.length - 1) {
           // increase the outputAmount by this.minerBribe
-          const modifiedAmount = outputAmount.add(this.minerBribe)
+          const modifiedAmount = outputAmount.add(this.protectionFee)
           // console.log('original amount out', outputAmount.toExact())
           // console.log('modified amount out', modifiedAmount.toExact())
           outputAmount = modifiedAmount
@@ -274,7 +250,7 @@ export class Trade<
         // by the miner bribe
         if (etherIn && i === 1) {
           // increase the input amount by this.minerBribe
-          const modifiedAmount = inputAmount.add(this.minerBribe)
+          const modifiedAmount = inputAmount.add(this.protectionFee)
           // console.log('original amount in', inputAmount.toExact())
           // console.log('modified amount in', modifiedAmount.toExact())
           amounts[i - 1] = modifiedAmount
@@ -400,8 +376,7 @@ export class Trade<
    * @param currentPairs used in recursion; the current list of pairs
    * @param originalAmountIn used in recursion; the original value of the currencyAmountIn parameter
    * @param bestTrades used in recursion; the current list of best trades
-   * @param gasPriceToBeat used to calculate the miner bribe
-   * @param minerBribeMargin used as the margin for the miner bribe calculation
+   * @param protectionFeeAmount the eth fee amount paid out of the quote
    */
   public static bestTradeExactIn<
     TInput extends Currency,
@@ -410,8 +385,7 @@ export class Trade<
     pairs: Pair[],
     currencyAmountIn: CurrencyAmount<TInput>,
     currencyOut: TOutput,
-    gasPriceToBeat: BigintIsh,
-    minerBribeMargin: BigintIsh,
+    protectionFeeAmount: BigintIsh,
     { maxNumResults = 3, maxHops = 3 }: BestTradeOptions = {},
     // used in recursion.
     currentPairs: Pair[] = [],
@@ -448,8 +422,7 @@ export class Trade<
             new Route([...currentPairs, pair], currencyAmountIn.currency, currencyOut),
             currencyAmountIn,
             tradeType,
-            gasPriceToBeat,
-            minerBribeMargin
+            protectionFeeAmount
           )
           sortedInsert(
             bestTrades,
@@ -470,8 +443,7 @@ export class Trade<
           pairsExcludingThisPair,
           currencyAmountIn,
           currencyOut,
-          gasPriceToBeat,
-          minerBribeMargin,
+          protectionFeeAmount,
           {
             maxNumResults,
             maxHops: maxHops - 1
@@ -501,8 +473,7 @@ export class Trade<
    * @param currentPairs used in recursion; the current list of pairs
    * @param originalAmountOut used in recursion; the original value of the currencyAmountOut parameter
    * @param bestTrades used in recursion; the current list of best trades
-   * @param gasPriceToBeat used to calculate the miner bribe
-   * @param minerBribeMargin used as the margin for the miner bribe calculation
+   * @param protectionFeeAmount the eth fee amount paid out of the quote
    */
   public static bestTradeExactOut<
     TInput extends Currency,
@@ -511,8 +482,7 @@ export class Trade<
     pairs: Pair[],
     currencyIn: TInput,
     currencyAmountOut: CurrencyAmount<TOutput>,
-    gasPriceToBeat: BigintIsh,
-    minerBribeMargin: BigintIsh,
+    protectionFeeAmount: BigintIsh,
     { maxNumResults = 3, maxHops = 3 }: BestTradeOptions = {},
     // used in recursion.
     currentPairs: Pair[] = [],
@@ -549,8 +519,7 @@ export class Trade<
             new Route([pair, ...currentPairs], currencyIn, currencyAmountOut.currency),
             currencyAmountOut,
             TradeType.EXACT_OUTPUT,
-            gasPriceToBeat,
-            minerBribeMargin
+            protectionFeeAmount
           )
           sortedInsert(
             bestTrades,
@@ -571,8 +540,7 @@ export class Trade<
           pairsExcludingThisPair,
           currencyIn,
           currencyAmountOut,
-          gasPriceToBeat,
-          minerBribeMargin,
+          protectionFeeAmount,
           {
             maxNumResults,
             maxHops: maxHops - 1
@@ -631,18 +599,13 @@ export class Trade<
    * @param pairs
    * @param currencyIn
    * @param currencyOut
-   * @param gasPriceToBeat
-   * @param minerBribeMargin
-   * @param maxHops maximum number of hops a returned trade can make, e.g. 1 hop goes through a single pair
+   * @param protectionFeeAmount the eth fee amount paid out of the quote
    */
   public static estimateMinTradeAmounts(
     pairs: Pair[],
     currencyIn: Currency,
     currencyOut: Currency,
-    gasPriceToBeat: BigintIsh,
-    minerBribeMargin: BigintIsh,
-    minTradeMargin: BigintIsh,
-    { maxHops = 3 }: BestTradeOptions = {}
+    protectionFeeAmount: BigintIsh
   ): MinTradeEstimate | null {
     
     const etherIn = currencyIn.isNative
@@ -650,49 +613,29 @@ export class Trade<
 
     if (!etherIn && !etherOut) return null
 
-    const exactInGas = estimatedGasForMethod(
-      Trade.methodNameForTradeType(TradeType.EXACT_INPUT, etherIn, etherOut),
-      maxHops.toString()
-    )
-    const exactOutGas = estimatedGasForMethod(
-      Trade.methodNameForTradeType(TradeType.EXACT_OUTPUT, etherIn, etherOut),
-      maxHops.toString()
-    )
-
-    const exactInBribe = calculateMargin(
-      calculateMinerBribe(gasPriceToBeat, exactInGas, minerBribeMargin),
-      minTradeMargin
-    )
-    const exactOutBribe = calculateMargin(
-      calculateMinerBribe(gasPriceToBeat, exactOutGas, minerBribeMargin),
-      minTradeMargin
-    )
-
     let minTokenAmountIn: CurrencyAmount<Token|Currency> | undefined
     let minTokenAmountOut: CurrencyAmount<Token|Currency> | undefined
     if (etherIn){
       const outTrade = Trade.bestTradeExactOut(
         pairs,
         currencyOut,
-        CurrencyAmount.fromRawAmount(currencyIn, exactOutBribe),
+        CurrencyAmount.fromRawAmount(currencyIn, protectionFeeAmount),
         '0',
-        '0'
       )[0]
       if (outTrade){
-        minTokenAmountIn = CurrencyAmount.fromRawAmount(currencyIn, exactInBribe)
+        minTokenAmountIn = CurrencyAmount.fromRawAmount(currencyIn, protectionFeeAmount)
         minTokenAmountOut = outTrade.inputAmount
       }
     } else if (etherOut){
       const inTrade = Trade.bestTradeExactIn(
         pairs,
-        CurrencyAmount.fromRawAmount(currencyOut, exactInBribe),
+        CurrencyAmount.fromRawAmount(currencyOut, protectionFeeAmount),
         currencyIn,
         '0',
-        '0'
       )[0]
       if (inTrade){
         minTokenAmountIn = inTrade.outputAmount
-        minTokenAmountOut = CurrencyAmount.fromRawAmount(currencyIn, exactOutBribe)
+        minTokenAmountOut = CurrencyAmount.fromRawAmount(currencyIn, protectionFeeAmount)
       }
       
     }
@@ -702,45 +645,5 @@ export class Trade<
       [TradeType.EXACT_INPUT]: minTokenAmountIn,
       [TradeType.EXACT_OUTPUT]: minTokenAmountOut
     }
-  }
-
-  /**
-   * Estimate bribe amounts given gas price and margin
-   * @param gasPriceToBeat
-   * @param minerBribeMargin
-   */
-   public static estimateBribeAmounts(
-    gasPriceToBeat: BigintIsh,
-    minerBribeMargin: BigintIsh,
-  ): BribeEstimate | null {
-    const ETH = Ether.onChain(1)
-    const bribesByMethod: BribeEstimates  = {
-      [MethodName.swapETHForExactTokens]: CurrencyAmount.fromRawAmount(ETH, calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapETHForExactTokens'), minerBribeMargin)),
-      [MethodName.swapExactETHForTokens]: CurrencyAmount.fromRawAmount(ETH, calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactETHForTokens'), minerBribeMargin)),
-      [MethodName.swapExactTokensForETH]: CurrencyAmount.fromRawAmount(ETH, calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactTokensForETH'), minerBribeMargin)),
-      [MethodName.swapExactTokensForTokens]: CurrencyAmount.fromRawAmount(ETH, calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapExactTokensForTokens'), minerBribeMargin)),
-      [MethodName.swapTokensForExactETH]: CurrencyAmount.fromRawAmount(ETH, calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapTokensForExactETH'), minerBribeMargin)),
-      [MethodName.swapTokensForExactTokens]: CurrencyAmount.fromRawAmount(ETH, calculateMinerBribe(gasPriceToBeat, estimatedGasForMethod('swapTokensForExactTokens'), minerBribeMargin)),
-    }
-    let minBribe: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(ETH, '1000000000000000000000000000000000000000000000000')
-    let maxBribe: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(ETH, '0')
-    let totalBribe: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(ETH, '0')
-    for (const methodName in MethodName){
-      const bribe: CurrencyAmount<Currency> = bribesByMethod[methodName as MethodName]
-      
-      totalBribe.add(bribe)
-      if (bribe.lessThan(minBribe)) minBribe = bribe
-      if (bribe.greaterThan(maxBribe)) maxBribe = bribe
-    }
-
-    const meanfraction: Fraction = totalBribe.divide(String(Object.keys(MethodName).length))
-    const meanBribe = CurrencyAmount.fromRawAmount(ETH, JSBI.divide(meanfraction.numerator,meanfraction.denominator))
-    return {
-      estimates: bribesByMethod,
-      minBribe,
-      maxBribe,
-      meanBribe,
-    }
-    
   }
 }
