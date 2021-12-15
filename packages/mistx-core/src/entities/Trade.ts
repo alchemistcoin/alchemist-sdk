@@ -11,7 +11,6 @@ import { Route } from './Route'
 import { currencyEquals, Token } from './Token'
 import { WETH } from './weth'
 
-
 // minimal interface so the input output comparator may be shared across types
 interface InputOutput<TInput extends Currency, TOutput extends Currency> {
   readonly inputAmount: CurrencyAmount<TInput>
