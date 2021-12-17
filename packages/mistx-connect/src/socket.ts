@@ -77,13 +77,20 @@ export interface TransactionProcessed {
   estimatedEffectiveGasPrice: number
 }
 
+export interface UserSettings {
+  deadline: BigNumberish;
+  priority: string;
+  slippage: number;
+  multihop: boolean;
+}
+
 export interface BundleReq {
   transactions: TransactionReq[] | string[]
   chainId?: number
   bribe?: string // BigNumber
   from?: string
-  deadline?: BigNumberish
   simulateOnly?: boolean
+  userSettings?: UserSettings
 }
 
 export interface SwapReq {
