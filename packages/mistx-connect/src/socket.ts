@@ -174,8 +174,8 @@ interface SocketOptions {
   onTransactionResponse?: (response: BundleRes | BundleResApi) => void
 }
 
-const defaultServerUrl = 'https://mistx-app-goerli.herokuapp.com'
-const tokenKey = `SESSION_TOKEN`
+const defaultServerUrl = 'https://api.mistx.io'
+const tokenKey = `MISTX_API_SESSION_TOKEN`
 
 export class MistxSocket {
   private socket: Socket<QuoteEventsMap, QuoteEventsMap>
