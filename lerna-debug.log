@@ -1,11 +1,167 @@
 0 silly argv {
-0 silly argv   _: [ 'add' ],
-0 silly argv   globs: [ 'packages/mistx-univ3' ],
+0 silly argv   _: [ 'publish' ],
+0 silly argv   composed: 'publish',
 0 silly argv   lernaVersion: '4.0.0',
-0 silly argv   '$0': 'lerna',
-0 silly argv   pkg: 'mistx-core'
+0 silly argv   '$0': 'lerna'
 0 silly argv }
 1 notice cli v4.0.0
-2 verbose rootPath /Users/mathieuwelche/workspace/alchemist-sdk
-3 error HttpErrorGeneral: 404 Not Found - GET https://registry.npmjs.org/mistx-core - Not found
-3 error     at /Users/mathieuwelche/workspace/alchemist-sdk/node_modules/npm-registry-fetch/check-response.js:95:15
+2 verbose rootPath /Users/taylormcmonigle/Projects/alchemist-sdk
+3 verbose session 6def5730b391fad8
+4 verbose user-agent lerna/4.0.0/node@v14.15.1+x64 (darwin)
+5 silly argv { _: [ 'publish' ], composed: 'publish', lernaVersion: '4.0.0' }
+6 verbose rootPath /Users/taylormcmonigle/Projects/alchemist-sdk
+7 info current version 5.0.0-alpha.6
+8 silly isAnythingCommitted
+9 verbose isAnythingCommitted 1
+10 silly getCurrentBranch
+11 verbose currentBranch feat/univ3
+12 silly remoteBranchExists
+13 silly isBehindUpstream
+14 silly isBehindUpstream feat/univ3 is behind origin/feat/univ3 by 0 commit(s) and ahead by 0
+15 silly hasTags
+16 verbose hasTags true
+17 silly git-describe.sync "v5.0.0-alpha.3-5-g55da901" => {"lastTagName":"v5.0.0-alpha.3","lastVersion":"v5.0.0-alpha.3","refCount":"5","sha":"55da901","isDirty":false}
+18 info Looking for changed packages since v5.0.0-alpha.3
+19 info ignoring diff in paths matching [ '*.md' ]
+20 silly checking diff packages/mistx-connect
+21 silly found diff in packages/mistx-connect/package.json
+21 silly found diff in packages/mistx-connect/src/socket.ts
+22 verbose filtered diff [
+22 verbose filtered diff   'packages/mistx-connect/package.json',
+22 verbose filtered diff   'packages/mistx-connect/src/socket.ts'
+22 verbose filtered diff ]
+23 silly checking diff packages/mistx-core
+24 silly found diff in packages/mistx-core/package.json
+24 silly found diff in packages/mistx-core/src/entities/Trade.ts
+24 silly found diff in packages/mistx-core/src/router.ts
+24 silly found diff in packages/mistx-core/test/entities.test.ts
+24 silly found diff in packages/mistx-core/test/pair.test.ts
+24 silly found diff in packages/mistx-core/test/trade.test.ts
+25 verbose filtered diff [
+25 verbose filtered diff   'packages/mistx-core/package.json',
+25 verbose filtered diff   'packages/mistx-core/src/entities/Trade.ts',
+25 verbose filtered diff   'packages/mistx-core/src/router.ts',
+25 verbose filtered diff   'packages/mistx-core/test/entities.test.ts',
+25 verbose filtered diff   'packages/mistx-core/test/pair.test.ts',
+25 verbose filtered diff   'packages/mistx-core/test/trade.test.ts'
+25 verbose filtered diff ]
+26 silly checking diff packages/mistx-univ3
+27 silly found diff in packages/mistx-univ3/package.json
+27 silly found diff in packages/mistx-univ3/src/multicall.ts
+27 silly found diff in packages/mistx-univ3/src/nonfungiblePositionManager.ts
+27 silly found diff in packages/mistx-univ3/src/payments.ts
+27 silly found diff in packages/mistx-univ3/src/quoter.ts
+27 silly found diff in packages/mistx-univ3/src/selfPermit.ts
+27 silly found diff in packages/mistx-univ3/src/staker.ts
+27 silly found diff in packages/mistx-univ3/src/swapRouter.ts
+27 silly found diff in packages/mistx-univ3/yarn.lock
+28 verbose filtered diff [
+28 verbose filtered diff   'packages/mistx-univ3/package.json',
+28 verbose filtered diff   'packages/mistx-univ3/src/multicall.ts',
+28 verbose filtered diff   'packages/mistx-univ3/src/nonfungiblePositionManager.ts',
+28 verbose filtered diff   'packages/mistx-univ3/src/payments.ts',
+28 verbose filtered diff   'packages/mistx-univ3/src/quoter.ts',
+28 verbose filtered diff   'packages/mistx-univ3/src/selfPermit.ts',
+28 verbose filtered diff   'packages/mistx-univ3/src/staker.ts',
+28 verbose filtered diff   'packages/mistx-univ3/src/swapRouter.ts',
+28 verbose filtered diff   'packages/mistx-univ3/yarn.lock'
+28 verbose filtered diff ]
+29 verbose updated @alchemist-coin/mistx-connect
+30 verbose updated @alchemist-coin/mistx-core
+31 verbose updated @alchemist-coin/mistx-univ3
+32 verbose git-describe undefined => "v5.0.0-alpha.3-5-g55da901"
+33 silly git-describe parsed => {"lastTagName":"v5.0.0-alpha.3","lastVersion":"v5.0.0-alpha.3","refCount":"5","sha":"55da901","isDirty":false}
+34 info execute Skipping releases
+35 silly lifecycle No script for "preversion" in "alchemist-sdk", continuing
+36 silly lifecycle No script for "preversion" in "@alchemist-coin/mistx-connect", continuing
+37 silly lifecycle No script for "preversion" in "@alchemist-coin/mistx-core", continuing
+38 silly lifecycle No script for "version" in "@alchemist-coin/mistx-connect", continuing
+39 silly lifecycle No script for "version" in "@alchemist-coin/mistx-core", continuing
+40 silly lifecycle No script for "preversion" in "@alchemist-coin/mistx-univ3", continuing
+41 silly lifecycle No script for "version" in "@alchemist-coin/mistx-univ3", continuing
+42 silly lifecycle No script for "version" in "alchemist-sdk", continuing
+43 silly gitAdd [
+43 silly gitAdd   'packages/mistx-connect/package.json',
+43 silly gitAdd   'packages/mistx-core/package.json',
+43 silly gitAdd   'packages/mistx-univ3/package.json',
+43 silly gitAdd   'lerna.json'
+43 silly gitAdd ]
+44 silly gitCommit v5.0.1-alpha.0
+45 verbose git [ 'commit', '-m', 'v5.0.1-alpha.0' ]
+46 silly gitTag v5.0.1-alpha.0
+47 verbose git [ 'tag', 'v5.0.1-alpha.0', '-m', 'v5.0.1-alpha.0' ]
+48 silly lifecycle No script for "postversion" in "@alchemist-coin/mistx-connect", continuing
+49 silly lifecycle No script for "postversion" in "@alchemist-coin/mistx-core", continuing
+50 silly lifecycle No script for "postversion" in "@alchemist-coin/mistx-univ3", continuing
+51 silly lifecycle No script for "postversion" in "alchemist-sdk", continuing
+52 info git Pushing tags...
+53 silly gitPush origin feat/univ3
+54 info publish Publishing packages to npm...
+55 info Verifying npm credentials
+56 verbose Retrieving npm user profile
+57 http fetch GET 200 https://registry.npmjs.org/-/npm/v1/user 330ms
+58 silly npm profile get received {"tfa":false,"name":"alchemistcoin","email":"thealchemistcoin@protonmail.com","email_verified":true,"created":"2021-07-23T01:55:18.841Z","updated":"2021-07-23T01:55:18.836Z","cidr_whitelist":null}
+59 silly get npm username received {"username":"alchemistcoin","tfa":false,"name":"alchemistcoin","email":"thealchemistcoin@protonmail.com","email_verified":true,"created":"2021-07-23T01:55:18.841Z","updated":"2021-07-23T01:55:18.836Z","cidr_whitelist":null}
+60 silly verifyNpmPackageAccess
+61 http fetch GET 200 https://registry.npmjs.org/-/org/alchemistcoin/package?format=cli 396ms (cache miss)
+62 info Checking two-factor auth mode
+63 verbose Retrieving npm user profile
+64 http fetch GET 200 https://registry.npmjs.org/-/npm/v1/user 398ms
+65 silly npm profile get received {"tfa":false,"name":"alchemistcoin","email":"thealchemistcoin@protonmail.com","email_verified":true,"created":"2021-07-23T01:55:18.841Z","updated":"2021-07-23T01:55:18.836Z","cidr_whitelist":null}
+66 silly 2FA false
+67 silly getCurrentSHA
+68 verbose getCurrentSHA 8c12bd2a6aab3df03a15f143702bc79994db1240
+69 silly lifecycle No script for "prepublish" in "alchemist-sdk", continuing
+70 silly lifecycle No script for "prepare" in "alchemist-sdk", continuing
+71 silly lifecycle No script for "prepublishOnly" in "alchemist-sdk", continuing
+72 silly lifecycle No script for "prepack" in "alchemist-sdk", continuing
+73 verbose pack-directory
+74 verbose pack-directory ../mistx-core
+75 silly lifecycle No script for "prepublish" in "@alchemist-coin/mistx-connect", continuing
+76 silly lifecycle No script for "prepublish" in "@alchemist-coin/mistx-core", continuing
+77 silly lifecycle No script for "prepare" in "@alchemist-coin/mistx-connect", continuing
+78 silly lifecycle No script for "prepare" in "@alchemist-coin/mistx-core", continuing
+79 silly lifecycle "prepublishOnly" starting in "@alchemist-coin/mistx-connect"
+80 info lifecycle @alchemist-coin/mistx-connect@5.0.1-alpha.0~prepublishOnly: @alchemist-coin/mistx-connect@5.0.1-alpha.0
+81 silly lifecycle "prepublishOnly" starting in "@alchemist-coin/mistx-core"
+82 info lifecycle @alchemist-coin/mistx-core@5.0.1-alpha.0~prepublishOnly: @alchemist-coin/mistx-core@5.0.1-alpha.0
+83 verbose lifecycle @alchemist-coin/mistx-connect@5.0.1-alpha.0~prepublishOnly: unsafe-perm in lifecycle true
+84 verbose lifecycle @alchemist-coin/mistx-connect@5.0.1-alpha.0~prepublishOnly: PATH: /Users/taylormcmonigle/Projects/alchemist-sdk/node_modules/npm-lifecycle/node-gyp-bin:/Users/taylormcmonigle/Projects/alchemist-sdk/packages/mistx-connect/node_modules/.bin:/Users/taylormcmonigle/.nvm/versions/node/v14.15.1/bin:~/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/taylormcmonigle/.rvm/bin:/Users/taylormcmonigle/bin
+85 verbose lifecycle @alchemist-coin/mistx-connect@5.0.1-alpha.0~prepublishOnly: CWD: /Users/taylormcmonigle/Projects/alchemist-sdk/packages/mistx-connect
+86 silly lifecycle @alchemist-coin/mistx-connect@5.0.1-alpha.0~prepublishOnly: Args: [ '-c', 'tsdx build' ]
+87 silly lifecycle @alchemist-coin/mistx-connect@5.0.1-alpha.0~prepublishOnly: Returned: code: 0  signal: null
+88 verbose lifecycle @alchemist-coin/mistx-core@5.0.1-alpha.0~prepublishOnly: unsafe-perm in lifecycle true
+89 verbose lifecycle @alchemist-coin/mistx-core@5.0.1-alpha.0~prepublishOnly: PATH: /Users/taylormcmonigle/Projects/alchemist-sdk/node_modules/npm-lifecycle/node-gyp-bin:/Users/taylormcmonigle/Projects/alchemist-sdk/packages/mistx-core/node_modules/.bin:/Users/taylormcmonigle/.nvm/versions/node/v14.15.1/bin:~/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/taylormcmonigle/.rvm/bin:/Users/taylormcmonigle/bin
+90 verbose lifecycle @alchemist-coin/mistx-core@5.0.1-alpha.0~prepublishOnly: CWD: /Users/taylormcmonigle/Projects/alchemist-sdk/packages/mistx-core
+91 silly lifecycle @alchemist-coin/mistx-core@5.0.1-alpha.0~prepublishOnly: Args: [ '-c', 'tsdx build' ]
+92 silly lifecycle "prepublishOnly" finished in "@alchemist-coin/mistx-connect"
+93 silly lifecycle No script for "prepack" in "@alchemist-coin/mistx-connect", continuing
+94 silly lifecycle No script for "postpack" in "@alchemist-coin/mistx-connect", continuing
+95 verbose packed packages/mistx-connect
+96 silly lifecycle @alchemist-coin/mistx-core@5.0.1-alpha.0~prepublishOnly: Returned: code: 0  signal: null
+97 silly lifecycle "prepublishOnly" finished in "@alchemist-coin/mistx-core"
+98 silly lifecycle No script for "prepack" in "@alchemist-coin/mistx-core", continuing
+99 silly lifecycle No script for "postpack" in "@alchemist-coin/mistx-core", continuing
+100 verbose packed packages/mistx-core
+101 verbose pack-directory ../mistx-univ3
+102 silly lifecycle No script for "prepublish" in "@alchemist-coin/mistx-univ3", continuing
+103 silly lifecycle No script for "prepare" in "@alchemist-coin/mistx-univ3", continuing
+104 silly lifecycle "prepublishOnly" starting in "@alchemist-coin/mistx-univ3"
+105 info lifecycle @alchemist-coin/mistx-univ3@5.0.1-alpha.0~prepublishOnly: @alchemist-coin/mistx-univ3@5.0.1-alpha.0
+106 verbose lifecycle @alchemist-coin/mistx-univ3@5.0.1-alpha.0~prepublishOnly: unsafe-perm in lifecycle true
+107 verbose lifecycle @alchemist-coin/mistx-univ3@5.0.1-alpha.0~prepublishOnly: PATH: /Users/taylormcmonigle/Projects/alchemist-sdk/node_modules/npm-lifecycle/node-gyp-bin:/Users/taylormcmonigle/Projects/alchemist-sdk/packages/mistx-univ3/node_modules/.bin:/Users/taylormcmonigle/.nvm/versions/node/v14.15.1/bin:~/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/taylormcmonigle/.rvm/bin:/Users/taylormcmonigle/bin
+108 verbose lifecycle @alchemist-coin/mistx-univ3@5.0.1-alpha.0~prepublishOnly: CWD: /Users/taylormcmonigle/Projects/alchemist-sdk/packages/mistx-univ3
+109 silly lifecycle @alchemist-coin/mistx-univ3@5.0.1-alpha.0~prepublishOnly: Args: [ '-c', 'tsdx build' ]
+110 silly lifecycle @alchemist-coin/mistx-univ3@5.0.1-alpha.0~prepublishOnly: Returned: code: 0  signal: null
+111 silly lifecycle "prepublishOnly" finished in "@alchemist-coin/mistx-univ3"
+112 silly lifecycle No script for "prepack" in "@alchemist-coin/mistx-univ3", continuing
+113 error ZlibError: zlib: invalid block type
+113 error     at Unzip.write (/Users/taylormcmonigle/Projects/alchemist-sdk/node_modules/minizlib/index.js:154:22)
+113 error     at Object.write (/Users/taylormcmonigle/Projects/alchemist-sdk/node_modules/tar/lib/parse.js:354:57)
+113 error     at Yallist.<anonymous> (/Users/taylormcmonigle/Projects/alchemist-sdk/node_modules/minipass/index.js:376:18)
+113 error     at Yallist.forEach (/Users/taylormcmonigle/Projects/alchemist-sdk/node_modules/yallist/yallist.js:156:8)
+113 error     at ReadStream.emit (/Users/taylormcmonigle/Projects/alchemist-sdk/node_modules/minipass/index.js:375:20)
+113 error     at ReadStream.emit (/Users/taylormcmonigle/Projects/alchemist-sdk/node_modules/fs-minipass/index.js:175:22)
+113 error     at ReadStream.write (/Users/taylormcmonigle/Projects/alchemist-sdk/node_modules/minipass/index.js:162:12)
+113 error     at ReadStream.[_handleChunk] (/Users/taylormcmonigle/Projects/alchemist-sdk/node_modules/fs-minipass/index.js:146:19)
+113 error     at ReadStream.[_onread] (/Users/taylormcmonigle/Projects/alchemist-sdk/node_modules/fs-minipass/index.js:123:32)
