@@ -72,6 +72,7 @@ export interface TransactionReq {
 export interface TransactionProcessed {
   serialized: string // serialized transaction
   bundle: string // bundle.id
+  hash: string
   raw: SwapReq | undefined // raw def. of each type of trade
   estimatedGas: number
   estimatedEffectiveGasPrice: number
