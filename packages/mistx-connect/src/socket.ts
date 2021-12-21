@@ -80,9 +80,19 @@ export interface TransactionProcessed {
 
 export interface UserSettings {
   deadline: BigNumberish;
-  priority: string;
+  fee: string;
   slippage: number;
   multihop: boolean;
+}
+
+export interface RecommendedAction {
+  action: string; // 'WAIT', 'RETRY', 'RETRY_UPDATED_SETTINGS',
+  error: string;
+  message: string;
+  updatedUserSettings: {
+    fee?: string;
+    slippage?: number;
+  };
 }
 
 export interface BundleReq {
@@ -136,12 +146,14 @@ export interface BundleProcessed {
   sessionToken: string
   chainId: number
   timestamp: number // EPOCH,
-  totalEstimatedGas: number
-  totalEstimatedEffectiveGasPrice: number
+  totalMaxFeePerGas: BigNumberish;
+  totalMaxPriorityFeePerGas: BigNumberish;
   from: string
-  deadline: BigNumberish
   simulateOnly: boolean
-  backrun: Backrun
+  backrun: Backrun,
+  backrunType: string,
+  userSettings: UserSettings,
+  recommendedAction: RecommendedAction
 }
 
 export interface BundleRes {
