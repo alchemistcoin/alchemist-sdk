@@ -111,48 +111,35 @@ export interface SwapReq {
   to: string
 }
 
-export interface Backrun {
-  best: {
-    backrunner: string
-    duration: number
-    count: number
-    transactions: IBackrunTransactionProcessed[]
-    totalMaxPriorityFeePerGas: BigNumberish
-    totalMaxFeePerGas: BigNumberish
-    totalGasPrice: BigNumberish
-    totalGasLimit: BigNumberish
-    totalValueETH?: number
-    totalValueUSD?: number
-  }
+
+export interface BundleBlocksResult {
+  [blockNumber: number]: BundleBlockResult;
 }
 
-export interface IBackrunTransactionProcessed {
-  serializedOrigin: string
-  serializedBackrun: string
-  maxPriorityFeePerGas: BigNumberish
-  maxFeePerGas: BigNumberish
-  gasPrice: BigNumberish
-  gasLimit: BigNumberish
-  blockNumber?: number
-  timestamp?: number
-  valueETH?: number
-  valueUSD?: number
+export interface BundleBlockResult {
+  simulationError: boolean
+  simulationResult: string
+  flashbotsResult?: string
+  totalGasUsed: number | undefined
+  baseFeePerGas: BigNumberish | undefined | null
 }
 
 export interface BundleProcessed {
   id: string
   transactions: TransactionProcessed[]
-  bribe: BigNumberish
-  sessionToken: string
   chainId: number
   timestamp: number // EPOCH,
-  totalMaxFeePerGas: BigNumberish;
-  totalMaxPriorityFeePerGas: BigNumberish;
   from: string
   simulateOnly: boolean
-  backrun: Backrun,
-  backrunType: string,
-  userSettings: UserSettings,
+  rewards: {
+    cashback?: {
+      totalValueETH: number;
+      totalValueUSD: number;
+    };
+  }
+  blocks: BundleBlocksResult
+  blocksCount: number
+  userSettings: UserSettings
   recommendedAction: RecommendedAction
 }
 
