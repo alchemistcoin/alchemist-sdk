@@ -107,7 +107,12 @@ export interface Backrun {
     totalValueUSD?: number
   }
 }
-
+export interface Reward {
+  cashback?: {
+    totalValueETH: number;
+    totalValueUSD: number;
+  };
+}
 export interface IBackrunTransactionProcessed {
   serializedOrigin: string
   serializedBackrun: string
@@ -133,7 +138,7 @@ export interface BundleProcessed {
   from: string
   deadline: BigNumberish
   simulateOnly: boolean
-  backrun: Backrun
+  rewards: Reward[]
 }
 
 export interface BundleRes {
