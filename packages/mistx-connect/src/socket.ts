@@ -93,7 +93,7 @@ export interface SwapReq {
   to: string
 }
 
-export interface Reward {
+export interface Rewards {
   cashback?: {
     totalValueETH: number;
     totalValueUSD: number;
@@ -124,7 +124,7 @@ export interface BundleProcessed {
   from: string
   deadline: BigNumberish
   simulateOnly: boolean
-  rewards: Reward[]
+  rewards: Rewards
 }
 
 export interface BundleRes {
