@@ -93,20 +93,6 @@ export interface SwapReq {
   to: string
 }
 
-export interface Backrun {
-  best: {
-    backrunner: string
-    duration: number
-    count: number
-    transactions: IBackrunTransactionProcessed[]
-    totalMaxPriorityFeePerGas: BigNumberish
-    totalMaxFeePerGas: BigNumberish
-    totalGasPrice: BigNumberish
-    totalGasLimit: BigNumberish
-    totalValueETH?: number
-    totalValueUSD?: number
-  }
-}
 export interface Reward {
   cashback?: {
     totalValueETH: number;
