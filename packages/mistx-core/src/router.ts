@@ -94,10 +94,8 @@ export abstract class Router {
     invariant(!('ttl' in options) || options.ttl > 0, 'TTL')
 
     const to: string = validateAndParseAddress(options.recipient)
-    console.log('slippage', options.allowedSlippage)
     let amountInFromTrade: CurrencyAmount<Currency> = trade.maximumAmountIn(options.allowedSlippage)
     if (etherIn && trade.protectionFee) {
-      console.log('add protectionFee')
       const protectionFeeAsEth = CurrencyAmount.fromRawAmount(amountInFromTrade.currency, trade.protectionFee.quotient.toString())
       amountInFromTrade = amountInFromTrade.add(protectionFeeAsEth)
     }
