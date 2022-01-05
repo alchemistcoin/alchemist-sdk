@@ -8,7 +8,7 @@ import { Percent } from './Percent'
 import { Price } from './Price'
 import { Pair } from './Pair'
 import { Route } from './Route'
-import { currencyEquals, Token } from './Token'
+import { Token } from './Token'
 import { WETH } from './weth'
 
 // minimal interface so the input output comparator may be shared across types
@@ -170,144 +170,178 @@ export class Trade<
     this.tradeType = tradeType
     this.protectionFee = CurrencyAmount.fromRawAmount(WETH[route.chainId], protectionFeeAmount)
 
-    const amounts: CurrencyAmount<Token>[] = new Array(route.path.length)
-    const nextPairs: Pair[] = new Array(route.pairs.length)
-    const etherIn = route.input.isNative
-    const etherOut = route.output.isNative
-    
-    
+    // const amounts: CurrencyAmount<Token>[] = new Array(route.path.length)
+    // const nextPairs: Pair[] = new Array(route.pairs.length)
+    // const etherIn = route.input.isNative
+    // const etherOut = route.output.isNative
+    // let modifiedInput: CurrencyAmount<Token> = amount.wrapped
+    // let modifiedOutput: CurrencyAmount<Token> = amount.wrapped
 
-    let modifiedInput: CurrencyAmount<Token> = amount.wrapped
-    let modifiedOutput: CurrencyAmount<Token> = amount.wrapped
+    // if (tradeType === TradeType.EXACT_INPUT) {
+    //   invariant(currencyEquals(amount.currency, route.input), 'INPUT')
 
-    if (tradeType === TradeType.EXACT_INPUT) {
-      invariant(currencyEquals(amount.currency, route.input), 'INPUT')
+    //   amounts[0] = amount.wrapped
 
-      amounts[0] = amount.wrapped
+    //   for (let i = 0; i < route.path.length - 1; i++) {
+    //     const pair = route.pairs[i]
 
-      for (let i = 0; i < route.path.length - 1; i++) {
-        const pair = route.pairs[i]
-
-        let inputAmount = amounts[i]
-        // if the input is ETH, calculate the output amount with the
-        // the input reduced by the minerBribe
-        if (etherIn && i === 0) {
-          // reduce the inputAmount by this.minerBribe
-          invariant(
-            inputAmount.greaterThan(this.protectionFee),
-            `Miner bribe ${this.protectionFee.toExact()} is greater than input ETH ${inputAmount.toExact()}`
-          )
-          const modifiedAmount = inputAmount.subtract(this.protectionFee)
-          // console.log('original amount in', inputAmount.toExact())
-          // console.log('modified amount in', modifiedAmount.toExact())
-          inputAmount = modifiedAmount
-          modifiedInput = modifiedAmount
-        }
+    //     let inputAmount = amounts[i]
+    //     // if the input is ETH, calculate the output amount with the
+    //     // the input reduced by the minerBribe
+    //     if (etherIn && i === 0) {
+    //       // reduce the inputAmount by this.minerBribe
+    //       invariant(
+    //         inputAmount.greaterThan(this.protectionFee),
+    //         `Miner bribe ${this.protectionFee.toExact()} is greater than input ETH ${inputAmount.toExact()}`
+    //       )
+    //       const modifiedAmount = inputAmount.subtract(this.protectionFee)
+    //       // console.log('original amount in', inputAmount.toExact())
+    //       // console.log('modified amount in', modifiedAmount.toExact())
+    //       inputAmount = modifiedAmount
+    //       modifiedInput = modifiedAmount
+    //     }
         
-        const [outputAmount, nextPair] = pair.getOutputAmount(inputAmount)
+    //     const [outputAmount, nextPair] = pair.getOutputAmount(inputAmount)
 
-        // if the output is ETH, reduce the output amount
-        // by the miner bribe
-        if (etherOut && i === route.path.length - 2) {
-          // reduce the outputAmount by this.minerBribe
-          invariant(
-            outputAmount.greaterThan(this.protectionFee),
-            `Miner bribe ${this.protectionFee.toExact()} is greater than output ETH ${outputAmount.toExact()}`
-          )
-          const modifiedAmount = outputAmount.subtract(this.protectionFee)
-          // console.log('original amount out', outputAmount.toExact())
-          // console.log('modified amount out', modifiedAmount.toExact())
-          amounts[i + 1] = modifiedAmount
-          modifiedOutput = outputAmount
-        } else {
-          modifiedOutput = outputAmount
-          amounts[i + 1] = outputAmount
-        }
+    //     // if the output is ETH, reduce the output amount
+    //     // by the miner bribe
+    //     if (etherOut && i === route.path.length - 2) {
+    //       // reduce the outputAmount by this.minerBribe
+    //       invariant(
+    //         outputAmount.greaterThan(this.protectionFee),
+    //         `Miner bribe ${this.protectionFee.toExact()} is greater than output ETH ${outputAmount.toExact()}`
+    //       )
+    //       const modifiedAmount = outputAmount.subtract(this.protectionFee)
+    //       // console.log('original amount out', outputAmount.toExact())
+    //       // console.log('modified amount out', modifiedAmount.toExact())
+    //       amounts[i + 1] = modifiedAmount
+    //       modifiedOutput = outputAmount
+    //     } else {
+    //       modifiedOutput = outputAmount
+    //       amounts[i + 1] = outputAmount
+    //     }
 
-        nextPairs[i] = nextPair
-      }
-    } else {
-      invariant(currencyEquals(amount.currency, route.output), 'OUTPUT')
-      amounts[amounts.length - 1] = amount.wrapped
-      for (let i = route.path.length - 1; i > 0; i--) {
-        let outputAmount = amounts[i]
-        // if the output is ETH, calculate the input amount with the
-        // the output increased by the minerBribe
-        if (etherOut && i === route.path.length - 1) {
-          // increase the outputAmount by this.minerBribe
-          const modifiedAmount = outputAmount.add(this.protectionFee)
-          // console.log('original amount out', outputAmount.toExact())
-          // console.log('modified amount out', modifiedAmount.toExact())
-          outputAmount = modifiedAmount
-          modifiedOutput = modifiedAmount
-        } else if (i === route.path.length - 1) {
-          modifiedOutput = outputAmount
-        }
-        const pair = route.pairs[i - 1]
-        const [inputAmount, nextPair] = pair.getInputAmount(outputAmount)
-        // if the input is ETH, increase the input amount
-        // by the miner bribe
-        if (etherIn && i === 1) {
-          // increase the input amount by this.minerBribe
-          const modifiedAmount = inputAmount.add(this.protectionFee)
-          // console.log('original amount in', inputAmount.toExact())
-          // console.log('modified amount in', modifiedAmount.toExact())
-          amounts[i - 1] = modifiedAmount
-          modifiedInput = inputAmount
-        } else if (i === 1) {
-          modifiedInput = inputAmount
-          amounts[i - 1] = modifiedInput
-        } else {
-          amounts[i - 1] = inputAmount
-        }
-        nextPairs[i - 1] = nextPair
-      }
-    }
-
-    this.exchange = route.pairs[0].exchange
-    this.inputAmount = CurrencyAmount.fromFractionalAmount(
-      route.input,
-      amounts[0].numerator,
-      amounts[0].denominator
-    )
+    //     nextPairs[i] = nextPair
+    //   }
+    // } else {
+    //   invariant(currencyEquals(amount.currency, route.output), 'OUTPUT')
+    //   amounts[amounts.length - 1] = amount.wrapped
+    //   for (let i = route.path.length - 1; i > 0; i--) {
+    //     let outputAmount = amounts[i]
+    //     // if the output is ETH, calculate the input amount with the
+    //     // the output increased by the minerBribe
+    //     if (etherOut && i === route.path.length - 1) {
+    //       // increase the outputAmount by this.minerBribe
+    //       const modifiedAmount = outputAmount.add(this.protectionFee)
+    //       // console.log('original amount out', outputAmount.toExact())
+    //       // console.log('modified amount out', modifiedAmount.toExact())
+    //       outputAmount = modifiedAmount
+    //       modifiedOutput = modifiedAmount
+    //     } else if (i === route.path.length - 1) {
+    //       modifiedOutput = outputAmount
+    //     }
+    //     const pair = route.pairs[i - 1]
+    //     const [inputAmount, nextPair] = pair.getInputAmount(outputAmount)
+    //     // if the input is ETH, increase the input amount
+    //     // by the miner bribe
+    //     if (etherIn && i === 1) {
+    //       // increase the input amount by this.minerBribe
+    //       const modifiedAmount = inputAmount.add(this.protectionFee)
+    //       // console.log('original amount in', inputAmount.toExact())
+    //       // console.log('modified amount in', modifiedAmount.toExact())
+    //       amounts[i - 1] = modifiedAmount
+    //       modifiedInput = inputAmount
+    //     } else if (i === 1) {
+    //       modifiedInput = inputAmount
+    //       amounts[i - 1] = modifiedInput
+    //     } else {
+    //       amounts[i - 1] = inputAmount
+    //     }
+    //     nextPairs[i - 1] = nextPair
+    //   }
+    // }
+    // this.inputAmount = CurrencyAmount.fromFractionalAmount(
+    //   route.input,
+    //   amounts[0].numerator,
+    //   amounts[0].denominator
+    // )
     // this.inputAmount =
     //   tradeType === TradeType.EXACT_INPUT
     //     ? amount
     //     : route.input === ETHER
     //     ? CurrencyAmount.ether(amounts[0].raw)
     //     : amounts[0]
-    this.outputAmount = CurrencyAmount.fromFractionalAmount(
-      route.output,
-      amounts[amounts.length - 1].numerator,
-      amounts[amounts.length - 1].denominator
-    )
+    // this.outputAmount = CurrencyAmount.fromFractionalAmount(
+    //   route.output,
+    //   amounts[amounts.length - 1].numerator,
+    //   amounts[amounts.length - 1].denominator
+    // )
     // this.outputAmount =
     //   tradeType === TradeType.EXACT_OUTPUT
     //     ? amount
     //     : route.output === ETHER
     //     ? CurrencyAmount.ether(amounts[amounts.length - 1].raw)
     //     : amounts[amounts.length - 1]
-    this.executionPrice = new Price(
-      route.input,
-      route.output,
-      modifiedInput.quotient,
-      modifiedOutput.quotient
-    )
+    // this.executionPrice = new Price(
+    //   route.input,
+    //   route.output,
+    //   modifiedInput.quotient,
+    //   modifiedOutput.quotient
+    // )
     // this.priceImpact = computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount)
-    this.priceImpact = computePriceImpact(
-      route.midPrice, 
-      CurrencyAmount.fromFractionalAmount(
-        route.input,
-        modifiedInput.numerator,
-        modifiedInput.denominator
-      ), 
-      CurrencyAmount.fromFractionalAmount(
+    // this.priceImpact = computePriceImpact(
+    //   route.midPrice, 
+    //   CurrencyAmount.fromFractionalAmount(
+    //     route.input,
+    //     modifiedInput.numerator,
+    //     modifiedInput.denominator
+    //   ), 
+    //   CurrencyAmount.fromFractionalAmount(
+    //     route.output,
+    //     modifiedOutput.numerator,
+    //     modifiedOutput.denominator
+    //   )
+    // )
+
+    const tokenAmounts: CurrencyAmount<Token>[] = new Array(route.path.length)
+    if (tradeType === TradeType.EXACT_INPUT) {
+      invariant(amount.currency.equals(route.input), 'INPUT')
+      tokenAmounts[0] = amount.wrapped
+      for (let i = 0; i < route.path.length - 1; i++) {
+        const pair = route.pairs[i]
+        const [outputAmount] = pair.getOutputAmount(tokenAmounts[i])
+        tokenAmounts[i + 1] = outputAmount
+      }
+      this.inputAmount = CurrencyAmount.fromFractionalAmount(route.input, amount.numerator, amount.denominator)
+      this.outputAmount = CurrencyAmount.fromFractionalAmount(
         route.output,
-        modifiedOutput.numerator,
-        modifiedOutput.denominator
+        tokenAmounts[tokenAmounts.length - 1].numerator,
+        tokenAmounts[tokenAmounts.length - 1].denominator
       )
+    } else {
+      invariant(amount.currency.equals(route.output), 'OUTPUT')
+      tokenAmounts[tokenAmounts.length - 1] = amount.wrapped
+      for (let i = route.path.length - 1; i > 0; i--) {
+        const pair = route.pairs[i - 1]
+        const [inputAmount] = pair.getInputAmount(tokenAmounts[i])
+        tokenAmounts[i - 1] = inputAmount
+      }
+      this.inputAmount = CurrencyAmount.fromFractionalAmount(
+        route.input,
+        tokenAmounts[0].numerator,
+        tokenAmounts[0].denominator
+      )
+      this.outputAmount = CurrencyAmount.fromFractionalAmount(route.output, amount.numerator, amount.denominator)
+    }
+
+    this.exchange = route.pairs[0].exchange
+    this.executionPrice = new Price(
+      this.inputAmount.currency,
+      this.outputAmount.currency,
+      this.inputAmount.quotient,
+      this.outputAmount.quotient
     )
-    
+    this.priceImpact = computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount)
     // console.log('old price impact', computePriceImpact(route.midPrice, this.inputAmount, this.outputAmount).toSignificant(6))
     // console.log('******************')
     // console.log('*** TRADE START **')

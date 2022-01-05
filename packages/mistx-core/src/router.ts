@@ -68,7 +68,7 @@ function toHex(currencyAmount: CurrencyAmount<Currency>) {
   return `0x${currencyAmount.quotient.toString(16)}`
 }
 
-const ZERO_HEX = '0x0'
+// const ZERO_HEX = '0x0'
 
 /**
  * Represents the Uniswap V2 Router, and has static methods for helping execute trades.
@@ -94,7 +94,14 @@ export abstract class Router {
     invariant(!('ttl' in options) || options.ttl > 0, 'TTL')
 
     const to: string = validateAndParseAddress(options.recipient)
-    const amountIn: string = toHex(trade.maximumAmountIn(options.allowedSlippage))
+    console.log('slippage', options.allowedSlippage)
+    let amountInFromTrade: CurrencyAmount<Currency> = trade.maximumAmountIn(options.allowedSlippage)
+    if (etherIn && trade.protectionFee) {
+      console.log('add protectionFee')
+      const protectionFeeAsEth = CurrencyAmount.fromRawAmount(amountInFromTrade.currency, trade.protectionFee.quotient.toString())
+      amountInFromTrade = amountInFromTrade.add(protectionFeeAsEth)
+    }
+    const amountIn: string = toHex(amountInFromTrade)
     const amountOut: string = toHex(trade.minimumAmountOut(options.allowedSlippage))
     const protectionFee: string = toHex(trade.protectionFee)
     const path: string[] = trade.route.path.map(token => token.address)
@@ -123,7 +130,7 @@ export abstract class Router {
       case 'swapExactTokensForETH':
         swapData.amount0 = amountIn
         swapData.amount1 = amountOut
-        value = ZERO_HEX
+        value = protectionFee
         break
       case 'swapExactTokensForTokens':
         swapData.amount0 = amountIn
