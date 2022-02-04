@@ -72,9 +72,27 @@ export interface TransactionReq {
 export interface TransactionProcessed {
   serialized: string // serialized transaction
   bundle: string // bundle.id
+  hash: string
   raw: SwapReq | undefined // raw def. of each type of trade
   estimatedGas: number
   estimatedEffectiveGasPrice: number
+}
+
+export interface UserSettings {
+  deadline: BigNumberish;
+  fee: string;
+  slippage: number;
+  multihop: boolean;
+}
+
+export interface RecommendedAction {
+  action: string; // 'WAIT', 'RETRY', 'RETRY_UPDATED_SETTINGS',
+  error: string;
+  message: string;
+  updatedUserSettings: {
+    fee?: string;
+    slippage?: number;
+  };
 }
 
 export interface BundleReq {
@@ -82,8 +100,8 @@ export interface BundleReq {
   chainId?: number
   bribe?: string // BigNumber
   from?: string
-  deadline?: BigNumberish
   simulateOnly?: boolean
+  userSettings?: UserSettings
 }
 
 export interface SwapReq {
@@ -93,47 +111,36 @@ export interface SwapReq {
   to: string
 }
 
-export interface Backrun {
-  best: {
-    backrunner: string
-    duration: number
-    count: number
-    transactions: IBackrunTransactionProcessed[]
-    totalMaxPriorityFeePerGas: BigNumberish
-    totalMaxFeePerGas: BigNumberish
-    totalGasPrice: BigNumberish
-    totalGasLimit: BigNumberish
-    totalValueETH?: number
-    totalValueUSD?: number
-  }
+
+export interface BundleBlocksResult {
+  [blockNumber: number]: BundleBlockResult;
 }
 
-export interface IBackrunTransactionProcessed {
-  serializedOrigin: string
-  serializedBackrun: string
-  maxPriorityFeePerGas: BigNumberish
-  maxFeePerGas: BigNumberish
-  gasPrice: BigNumberish
-  gasLimit: BigNumberish
-  blockNumber?: number
-  timestamp?: number
-  valueETH?: number
-  valueUSD?: number
+export interface BundleBlockResult {
+  simulationError: boolean
+  simulationResult: string
+  flashbotsResult?: string
+  totalGasUsed: number | undefined
+  baseFeePerGas: BigNumberish | undefined | null
 }
 
 export interface BundleProcessed {
   id: string
   transactions: TransactionProcessed[]
-  bribe: BigNumberish
-  sessionToken: string
   chainId: number
   timestamp: number // EPOCH,
-  totalEstimatedGas: number
-  totalEstimatedEffectiveGasPrice: number
   from: string
-  deadline: BigNumberish
   simulateOnly: boolean
-  backrun: Backrun
+  rewards: {
+    cashback?: {
+      totalValueETH: number;
+      totalValueUSD: number;
+    };
+  }
+  blocks: BundleBlocksResult
+  blocksCount: number
+  userSettings: UserSettings
+  recommendedAction: RecommendedAction
 }
 
 export interface BundleRes {
@@ -251,7 +258,7 @@ export class MistxSocket {
      * - Store the session token in the browser local storage
      */
     this.socket.on(Event.SOCKET_SESSION, (session: any) => {
-      localStorage.setItem(tokenKey, session.token)
+      if (session && session.token) localStorage.setItem(tokenKey, session.token)
       if (onSocketSession) onSocketSession(session)
     })
   

@@ -68,7 +68,7 @@ function toHex(currencyAmount: CurrencyAmount<Currency>) {
   return `0x${currencyAmount.quotient.toString(16)}`
 }
 
-const ZERO_HEX = '0x0'
+// const ZERO_HEX = '0x0'
 
 /**
  * Represents the Uniswap V2 Router, and has static methods for helping execute trades.
@@ -94,9 +94,14 @@ export abstract class Router {
     invariant(!('ttl' in options) || options.ttl > 0, 'TTL')
 
     const to: string = validateAndParseAddress(options.recipient)
-    const amountIn: string = toHex(trade.maximumAmountIn(options.allowedSlippage))
+    let amountInFromTrade: CurrencyAmount<Currency> = trade.maximumAmountIn(options.allowedSlippage)
+    if (etherIn && trade.protectionFee) {
+      const protectionFeeAsEth = CurrencyAmount.fromRawAmount(amountInFromTrade.currency, trade.protectionFee.quotient.toString())
+      amountInFromTrade = amountInFromTrade.add(protectionFeeAsEth)
+    }
+    const amountIn: string = toHex(amountInFromTrade)
     const amountOut: string = toHex(trade.minimumAmountOut(options.allowedSlippage))
-    const minerBribe: string = toHex(trade.minerBribe)
+    const protectionFee: string = toHex(trade.protectionFee)
     const path: string[] = trade.route.path.map(token => token.address)
     const deadline =
       'ttl' in options
@@ -123,12 +128,12 @@ export abstract class Router {
       case 'swapExactTokensForETH':
         swapData.amount0 = amountIn
         swapData.amount1 = amountOut
-        value = ZERO_HEX
+        value = protectionFee
         break
       case 'swapExactTokensForTokens':
         swapData.amount0 = amountIn
         swapData.amount1 = amountOut
-        value = minerBribe
+        value = protectionFee
         break
       case 'swapETHForExactTokens':
         invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
@@ -140,20 +145,20 @@ export abstract class Router {
         invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
         swapData.amount0 = amountOut
         swapData.amount1 = amountIn
-        value = minerBribe
+        value = protectionFee
         break
       case 'swapTokensForExactTokens':
         invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
         swapData.amount0 = amountOut
         swapData.amount1 = amountIn
-        value = minerBribe
+        value = protectionFee
         break
       default:
         // args = []
         value = ''
     }
     const swapDataArr: SwapDataArr = [swapData.amount0, swapData.amount1, swapData.path, swapData.to, swapData.deadline]
-    const args: [SwapDataArr, string] = [swapDataArr, minerBribe]
+    const args: [SwapDataArr, string] = [swapDataArr, protectionFee]
 
     invariant((methodName && args && value), 'CALL_PARAMS_MISSING')
     return {

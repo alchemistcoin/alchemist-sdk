@@ -1,4 +1,5 @@
-import { Token, WETH } from '../Token'
+import { Token } from '../Token'
+import { WETH } from '../weth'
 
 import { Currency } from '../Currency'
 import { NativeCurrency } from '../NativeCurrency'

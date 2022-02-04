@@ -1,7 +1,7 @@
 {
 	"name": "@alchemist-coin/mistx-connect",
 	"license": "MIT",
-	"version": "4.5.2",
+	"version": "5.0.1-alpha.7",
 	"description": "🛠 An SDK for sending transactions to flashbots.",
 	"main": "dist/index.js",
 	"typings": "dist/index.d.ts",
@@ -39,5 +39,5 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"gitHead": "1f4f7cb26c991eb59fed40cabcb37bfdf36af58e"
+	"gitHead": "8c12bd2a6aab3df03a15f143702bc79994db1240"
 }

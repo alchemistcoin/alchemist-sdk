@@ -15,9 +15,10 @@ export enum ChainId {
 }
 
 export enum Exchange {
-  UNI,
-  SUSHI,
-  UNDEFINED
+  UNI = 'UNIV2',
+  UNIV3 = 'UNIV3',
+  SUSHI = 'SUSHI',
+  UNDEFINED = 'UNDEFINED'
 }
 
 export enum TradeType {
@@ -37,18 +38,21 @@ export const MaxUint256 = JSBI.BigInt(
 
 export const FACTORY_ADDRESS: { [exchange in Exchange]: string } = {
   [Exchange.UNI]: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
+  [Exchange.UNIV3]: '0x1f98431c8ad98523631ae4a59f267346ea31f984',
   [Exchange.SUSHI]: '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac',
   [Exchange.UNDEFINED]: '0x0'
 }
 
 export const ROUTER_ADDRESS: { [exchange in Exchange]: string } = {
   [Exchange.UNI]: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
+  [Exchange.UNIV3]: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
   [Exchange.SUSHI]: '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9',
   [Exchange.UNDEFINED]: '0x0'
 }
 
 export const INIT_CODE_HASH: { [exchange in Exchange]: string } = {
   [Exchange.UNI]: '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
+  [Exchange.UNIV3]: '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54',
   [Exchange.SUSHI]: '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303',
   [Exchange.UNDEFINED]: '0x0'
 }
