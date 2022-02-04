@@ -258,7 +258,7 @@ export class MistxSocket {
      * - Store the session token in the browser local storage
      */
     this.socket.on(Event.SOCKET_SESSION, (session: any) => {
-      localStorage.setItem(tokenKey, session.token)
+      if (session && session.token) localStorage.setItem(tokenKey, session.token)
       if (onSocketSession) onSocketSession(session)
     })
   
